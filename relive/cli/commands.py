@@ -1,0 +1,39 @@
+
+ccmds = {
+    'dir': 'list_snapshots',
+    'load': "load_snapshot s",
+    'info': "print_statistics"
+}
+
+pcmds = {
+    'test': 'test_midi',
+    'lb': 'list_banks',
+    'ls': 'list_sequences_in_bank',
+    'lp': 'list_patterns',
+    'sb': 'select_bank i',
+    'sp': 'select_pattern i',
+    'pi': 'get_pattern_info',
+    'pp': 'get_notes_in_pattern',
+    'start': 'transport_start',
+    'stop': 'transport_stop',
+    'toggle': 'transport_toggle'
+}
+
+lcmds = {
+    'im': 'isModified',
+    'ed': 'enableDebug b',
+    # Direct MIDI interface
+    'pn': 'playNote i i i i',
+    # Pattern management
+    'cp': 'createPattern',
+    'gpt': 'getPatternsInTrack i i i',
+    'gs': 'getSteps',
+    ## Sequence management
+    'gsn': 'getSequenceName i i',
+    'gts': 'getTracksInSequence i i',
+    'tps': 'togglePlayState i i',
+    # Bank management
+    'gsb': 'getSequencesInBank i',
+    't': 'getTempo',
+    'tgps': 'transportGetPlayStatus',
+}

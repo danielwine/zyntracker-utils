@@ -1,0 +1,12 @@
+__pycache__
+
+# experimental and temporary files
+_*.sh
+data/xrns
+data/RIFF
+data/temp
+scripts/_*
+*.tmp
+
+# builds
+lib/zynseq/build
