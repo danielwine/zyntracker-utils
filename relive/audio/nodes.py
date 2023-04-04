@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from jack import Client, JackOpenError
-from relive.utils.stdio import LoggerFactory, launch_plugin
+from relive.io.logger import LoggerFactory
+from relive.io.process import launch_plugin
 logger, ln = LoggerFactory(__name__)
 
 

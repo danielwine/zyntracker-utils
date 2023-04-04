@@ -6,7 +6,7 @@ from relive.audio.sequencer import Sequencer
 from .commands import ccmds, pcmds, lcmds
 from .errors import InvalidArgumentType, MissingArgument
 from relive.audio.service import AudioBackend
-from relive.utils.stdio import StdOut
+from relive.io.process import StdOut
 
 logging.basicConfig(stream=stdout, level=logging.INFO,
                     format='%(message)s')

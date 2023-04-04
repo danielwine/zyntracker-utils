@@ -1,11 +1,12 @@
 from time import sleep
 from jack import JackError
-import relive.utils.stdio as io
+from relive.io.logger import LoggerFactory
+import relive.io.process as proc
 from .engines import engines
 from .nodes import *
 from relive.config import debug_mode
 
-logger, ln = io.LoggerFactory(__name__)
+logger, ln = LoggerFactory(__name__)
 
 
 class AudioBackend():
@@ -23,13 +24,13 @@ class AudioBackend():
 
     def check_services(self):
         for service in self.service_names:
-            self.services[service] = io.launch_and_get_code(service)
+            self.services[service] = proc.launch_and_get_code(service)
             logger.info(
                 f'{ln}{service}: '
                 f'{"online" if self.is_running(service) else "offline"}')
         if self.is_running('jalv'):
             logger.info(f'{ln}Jalv is killed.')
-            io.kill(self.services['jalv'][0])
+            proc.kill(self.services['jalv'][0])
 
     def is_running(self, name):
         if name in self.services:
@@ -68,4 +69,4 @@ class AudioBackend():
         pass
 
 
-stdout = io.StdOut()
+stdout = proc.StdOut()

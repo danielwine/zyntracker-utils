@@ -22,7 +22,7 @@ class ReliveApp(App):
 
     def build(self):
         self.scale = 2
-        self.audio.check_services()
-        self.audio.start_engines()
-        self.audio.connect_all()
+        # self.audio.check_services()
+        # self.audio.start_engines()
+        # self.audio.connect_all()
         return Screen()

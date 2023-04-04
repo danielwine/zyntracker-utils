@@ -1,4 +1,4 @@
-from relive.utils.stdio import get_platform
+from relive.io.process import get_platform
 
 # [PATHS]
 # zss = ., /zynthian/zynthian-my-data/snapshots
