@@ -1,0 +1,14 @@
+[Unit]
+Description=ReLive Service
+After=network.target
+
+[Service]
+User=pi
+#Restart=on-failure
+#RestartSec=200
+Type=simple
+ExecStart=/home/pi/relive/start-rpi.sh
+Environment="JACK_NO_AUDIO_RESERVATION=1"
+
+[Install]
+WantedBy=multi-user.target

@@ -11,7 +11,7 @@ if [[ ${MACHINE_HW_NAME} =~ [armv7l] ]]; then
 fi
 
 
-cd $INSTALL_DIR
+cd $RELIVE_SRC_FOLDER
 if [ -d "zynaddsubfx" ]; then
 	rm -rf "zynaddsubfx"
 fi
@@ -33,4 +33,4 @@ cmake ..
 make -j 4
 make install
 
-rm -rf "$INSTALL_DIR/zynaddsubfx"
+rm -rf "$RELIVE_SRC_FOLDER/zynaddsubfx"
