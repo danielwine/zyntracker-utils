@@ -4,18 +4,15 @@ import sys
 import io
 from .gui import ReliveApp
 from relive.audio.sequencer import Sequencer
-from relive.audio.service import AudioBackend
+from relive.audio.service import AudioManager
 
 
 def main():
-    audio = AudioBackend(init_delay=0.2, verbose=False)
-    # seq = Sequencer()
+    audio = AudioManager(init_delay=0.2, verbose=False)
     GUIapp = ReliveApp()
     GUIapp.add_engine(audio)
     GUIapp.run()
-    # seq.destroy()
-    # audio.disconnect_all()
-    # audio.stop_engines()
+    # audio.stop()
 
 if __name__ == "__main__":
     main()

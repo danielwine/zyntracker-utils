@@ -5,6 +5,7 @@ import relive.io.process as proc
 from .engines import engines
 from .nodes import *
 from relive.config import debug_mode
+from .sequencer import Sequencer
 
 logger, ln = LoggerFactory(__name__)
 
@@ -15,6 +16,7 @@ class AudioBackend():
     services = {}
     midiin = None
     client = None
+    first_run = True
     sequencer = JackSequencerNode('zynseq', 'zynseq')
     systemout = JackSystemOutNode('system')
 
@@ -28,9 +30,10 @@ class AudioBackend():
             logger.info(
                 f'{ln}{service}: '
                 f'{"online" if self.is_running(service) else "offline"}')
-        if self.is_running('jalv'):
+        if self.is_running('jalv') and self.first_run:
             logger.info(f'{ln}Jalv is killed.')
             proc.kill(self.services['jalv'][0])
+        self.first_run = False
 
     def is_running(self, name):
         if name in self.services:
@@ -47,8 +50,9 @@ class AudioBackend():
     def stop_engines(self):
         logger.info(f'{ln}Shutting down...')
         for engine in self.engines.values():
+            print(engine.name)
             engine.process.terminate()
-
+ 
     def connect_all(self):
         if not debug_mode:
             stdout.unmute()
@@ -67,6 +71,37 @@ class AudioBackend():
 
     def disconnect_all(self):
         pass
+
+
+class AudioManager(AudioBackend):
+    def __init__(self, init_delay=0.1, verbose=False):
+        super().__init__(init_delay, verbose)
+
+    def newline(self):
+        if self.verbose: print()
+
+    def start(self):
+        self.newline()
+        self.check_services()
+        if not self.is_running('jack'):
+            logger.warning('zynseq will not be able to access jack server.')
+            stdout.mute()
+        self.newline()
+        self.seq = Sequencer()
+        if stdout.muted:
+           stdout.unmute()
+        self.initialize()
+
+    def initialize(self):
+        self.start_engines()
+        self.newline()
+        self.connect_all()
+        self.newline()
+
+    def stop(self):
+        self.seq.destroy()
+        self.disconnect_all()
+        self.stop_engines()
 
 
 stdout = proc.StdOut()

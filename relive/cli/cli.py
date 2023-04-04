@@ -2,11 +2,9 @@ import logging
 from sys import stdout
 from os.path import isfile, join
 from os import listdir, getcwd
-from relive.audio.sequencer import Sequencer
-from .commands import ccmds, pcmds, lcmds
+from .commands import pcmds, lcmds
 from .errors import InvalidArgumentType, MissingArgument
-from relive.audio.service import AudioBackend
-from relive.io.process import StdOut
+from relive.audio.service import AudioManager
 
 logging.basicConfig(stream=stdout, level=logging.INFO,
                     format='%(message)s')
@@ -23,31 +21,10 @@ class CLI:
         print('   e.g.: pn 62 110 0 200')
 
     def start(self):
-        self.stdout = StdOut()
-        self.audio = AudioBackend(init_delay=0.2, verbose=True)
-        print()
-        self.audio.check_services()
-        if not self.audio.is_running('jack'):
-            logger.warning('zynseq will not be able to access jack server.')
-            self.stdout.mute()
-        print()
-        self.seq = Sequencer()
-        if self.stdout.muted:
-            self.stdout.unmute()
-        self.init_audio()
+        self.audio = AudioManager(init_delay=0.2, verbose=True)
+        self.audio.start()
         self.print_statistics()
         self.console_loop()
-
-    def stop(self):
-        self.seq.destroy()
-        self.audio.disconnect_all()
-        self.audio.stop_engines()
-
-    def init_audio(self):
-        self.audio.start_engines()
-        print()
-        self.audio.connect_all()
-        print()
 
     def pprint(self, data):
         if type(data) == dict:
@@ -60,7 +37,11 @@ class CLI:
                 print(f"  {el}")
 
     def show_help(self):
-        self.pprint(ccmds)
+        cmds = {}
+        for method in CLI.__dict__.items():
+            if method[0].startswith('cmd_'):
+                cmds[method[0][4:]] = method[1].__doc__
+        self.pprint(cmds)
         self.pprint(pcmds)
         print()
         self.pprint(lcmds)
@@ -105,22 +86,25 @@ class CLI:
         return [f for f in listdir(path) if isfile(join(path, f))]
 
     def load(self, par):
-        if not par: print('Please specify file name.'); return
+        if not par:
+            print('Please specify file name.')
+            return
         files = [el for el in self.zss() if el.startswith(par[0])]
         self.file = files[0] if files else ''
         if self.file:
-            success = self.seq.load_file(getcwd() + '/data/zss', self.file)
+            success = self.audio.seq.load_file(
+                getcwd() + '/data/zss', self.file)
             if success:
-                self.seq.get_info()
+                self.audio.seq.get_info()
                 self.print_statistics()
         # self.info(4)
 
     def print_statistics(self):
         print('FILE loaded: ', 'none' if not self.file else self.file)
-        print(f'  {"BPM:":9s}', self.seq.bpm)
-        print(f'  {"BPB:":9s}', self.seq.bpb)
-        print(f'  {"banks:":9s}', len(self.seq.banks))
-        print(f'  {"patterns:":9s}', self.seq.get_pattern_count())
+        print(f'  {"BPM:":9s}', self.audio.seq.bpm)
+        print(f'  {"BPB:":9s}', self.audio.seq.bpb)
+        print(f'  {"banks:":9s}', len(self.audio.seq.banks))
+        print(f'  {"patterns:":9s}', self.audio.seq.get_pattern_count())
 
     def zss(self):
         zss = self.get_files('./data/zss')
@@ -131,7 +115,7 @@ class CLI:
         fnsplit = lcmds[cmd].split()
         fname = fnsplit[0]
         try:
-            func = getattr(self.seq.libseq, fname)
+            func = getattr(self.audio.seq.libseq, fname)
             ret = self.invoke_lib_function(func, fnsplit[1:], par)
             print(ret)
         except InvalidArgumentType as e:
@@ -144,7 +128,7 @@ class CLI:
     def parse_pycmds(self, cmd, par):
         fnsplit = pcmds[cmd].split()
         fname = fnsplit[0]
-        func = getattr(self.seq, fname)
+        func = getattr(self.audio.seq, fname)
         par = self.convert_params(par, fnsplit)
         if len(fnsplit) == 1:
             ret = func()
@@ -156,11 +140,41 @@ class CLI:
             else:
                 print(ret)
 
+    def cmd_dir(self, par):
+        """list ZSS files"""
+        self.pprint(self.zss())
+
+    def cmd_load(self, par):
+        """load ZSS file"""
+        self.load(par)
+
+    def cmd_ports(self, par):
+        """list available jack ports"""
+        self.pprint(self.audio.client.get_ports())
+
+    def cmd_cons(self, par):
+        """list jack connections"""
+        ports = self.audio.client.get_ports()
+        for port in ports:
+            cons = self.audio.client.get_all_connections(port)
+            if cons:
+                print(port)
+                self.pprint(cons)
+
+    def cmd_proc(self, par):
+        """list running engines"""
+        self.audio.check_services()
+
+    def cmd_info(self, par):
+        """print statistics"""
+        self.print_statistics()
+
     def console_loop(self):
         quit = False
         prev_res = ''
         while not quit:
-            res = input(f'b{self.seq.bank:02d}p{self.seq.pattern:02d}> ')
+            res = input(
+                f'b{self.audio.seq.bank:02d}p{self.audio.seq.pattern:02d}> ')
             res = res.strip()
             if res == '':
                 res = prev_res
@@ -173,13 +187,12 @@ class CLI:
                 quit = True
             if cmd in ['h', 'help']:
                 self.show_help()
-            if cmd in ['i', 'info']:
-                self.print_statistics()
-            if cmd == 'dir':
-                self.pprint(self.zss())
-            if cmd == 'load':
-                self.load(par)
+            if hasattr(self, 'cmd_' + cmd):
+                getattr(self, 'cmd_' + cmd)(par)
             if cmd in lcmds:
                 self.parse_libcmds(cmd, par)
             if cmd in pcmds:
                 self.parse_pycmds(cmd, par)
+
+    def stop(self):
+        self.audio.stop()

@@ -1,10 +1,4 @@
 
-ccmds = {
-    'dir': 'list_snapshots',
-    'load': "load_snapshot s",
-    'info': "print_statistics"
-}
-
 pcmds = {
     'test': 'test_midi',
     'lb': 'list_banks',
