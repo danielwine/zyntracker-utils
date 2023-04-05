@@ -12,7 +12,7 @@ def main():
     GUIapp = ReliveApp()
     GUIapp.add_engine(audio)
     GUIapp.run()
-    # audio.stop()
+    audio.stop()
 
 if __name__ == "__main__":
     main()

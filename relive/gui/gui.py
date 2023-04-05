@@ -22,5 +22,5 @@ class ReliveApp(App):
 
     def build(self):
         self.scale = 2
-        # self.audio.start()
+        self.audio.start()
         return Screen()

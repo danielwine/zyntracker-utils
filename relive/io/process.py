@@ -1,6 +1,9 @@
 import os
 from subprocess import Popen, PIPE
 
+# sys.stdout = io.StringIO()
+# sys.stderr = io.StringIO()
+
 
 class StdOut:
     def __new__(cls):
@@ -32,11 +35,14 @@ class StdOut:
         self.muted = False
 
 
-def launch_plugin(uri):
-    stdout.mute()
+def launch_plugin(uri, debug=False):
+    if not debug:
+        stdout.mute()
     ret = Popen(['jalv', '-i', uri])
-    stdout.unmute()
+    if not debug:
+        stdout.unmute()
     return ret
+
 
 def _popen_pipe(app, param=''):
     proc = Popen([app, param], stdout=PIPE)

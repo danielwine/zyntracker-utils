@@ -5,6 +5,7 @@ from os import listdir, getcwd
 from .commands import pcmds, lcmds
 from .errors import InvalidArgumentType, MissingArgument
 from relive.audio.service import AudioManager
+from relive.audio.utils import is_port, format_port
 
 logging.basicConfig(stream=stdout, level=logging.INFO,
                     format='%(message)s')
@@ -14,14 +15,18 @@ logger = logging.getLogger()
 class CLI:
     file = ''
 
-    def __init__(self) -> None:
+    def __init__(self, debug=False) -> None:
+        self.debug = debug
         print('Interactive shell for zynseq by danielwine.')
+        if self.debug:
+            print('DEBUG mode on.')
         print('h: help, x: exit, enter: previous cmd')
         print('  usage <cmd> [options]')
         print('   e.g.: pn 62 110 0 200')
 
     def start(self):
-        self.audio = AudioManager(init_delay=0.2, verbose=True)
+        self.audio = AudioManager(
+            init_delay=0.2, verbose=True, debug=self.debug)
         self.audio.start()
         self.print_statistics()
         self.console_loop()
@@ -34,7 +39,18 @@ class CLI:
                 print(f"  {key:<5s} : {value}")
         if type(data) == list:
             for el in data:
-                print(f"  {el}")
+                if type(el) == tuple:
+                    if is_port(el[0]):
+                        print(format_port(el[0]))
+                        for port in el[1]:
+                            print('  ' + format_port(port))
+                    else:
+                        print(f"  {el[0]}: {el[1]}")
+                else:
+                    if is_port(el):
+                        print('  ' + format_port(el))
+                    else:
+                        print(f"  {el}")
 
     def show_help(self):
         cmds = {}
@@ -154,12 +170,7 @@ class CLI:
 
     def cmd_cons(self, par):
         """list jack connections"""
-        ports = self.audio.client.get_ports()
-        for port in ports:
-            cons = self.audio.client.get_all_connections(port)
-            if cons:
-                print(port)
-                self.pprint(cons)
+        self.pprint(self.audio.get_all_connections())
 
     def cmd_proc(self, par):
         """list running engines"""
