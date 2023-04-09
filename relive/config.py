@@ -5,5 +5,7 @@ from relive.io.process import get_platform
 # xrns = ., /home/daniel/ideas/
 
 debug_mode = False
+autorun_jack = False
+
 platform, _ = get_platform()
 isRaspberry = True if platform == 'armv7l' else False

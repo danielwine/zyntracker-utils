@@ -35,14 +35,17 @@ class StdOut:
         self.muted = False
 
 
-def launch_plugin(uri, debug=False):
-    if not debug:
-        stdout.mute()
-    ret = Popen(['jalv', '-i', uri])
-    if not debug:
-        stdout.unmute()
-    return ret
+# def launch_plugin(uri, debug=False):
+#     if not debug:
+#         stdout.mute()
+#     ret = Popen(['jalv', uri])
+#     if not debug:
+#         stdout.unmute()
+#     return ret
 
+def launch_plugin(url):
+    proc = Popen(['jalv', url], stdin=PIPE, stdout=PIPE)
+    return proc
 
 def _popen_pipe(app, param=''):
     proc = Popen([app, param], stdout=PIPE)

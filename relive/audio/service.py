@@ -5,6 +5,7 @@ import relive.io.process as proc
 from .engines import engines
 from .nodes import *
 from .sequencer import Sequencer
+from relive.config import autorun_jack
 
 logger = LoggerFactory(__name__)
 
@@ -17,7 +18,7 @@ class AudioBackend():
     midiin = None
     client = None
     first_run = True
-    sequencer = JackSequencerNode(client_name, client_name)
+    sequencer = None
     systemout = JackSystemOutNode('system')
 
     def __init__(self, init_delay=0.1, verbose=False, debug=False):
@@ -102,23 +103,33 @@ class AudioManager(AudioBackend):
     def start(self):
         self.newline()
         self.check_services()
-        if not self.is_running('jack'):
-            logger.warning('zynseq will not be able to access jack server.')
-            stdout.mute()
+        self.is_jack_running = self.is_running('jack')
+        if not self.is_jack_running:
+            if not autorun_jack:
+                logger.warning(
+                    'zynseq will not be able to access jack server.')
+            else:
+                self.start_jack()
         self.newline()
+        stdout.mute()
+        self.sequencer = JackSequencerNode(
+            self.client_name, self.client_name)
         self.seq = Sequencer()
-        if stdout.muted:
-            stdout.unmute()
         self.initialize()
         if self.debug:
             self.seq.libseq.enableDebug(True)
+        if not self.is_jack_running:
+            sleep(2)
+            stdout.unmute()
 
     def initialize(self):
-        self.start_engines()
+        if self.is_jack_running:
+            self.start_engines()
         self.client = self.sequencer.launch()
         self.newline()
-        self.connect_all()
-        self.newline()
+        if self.is_jack_running:
+            self.connect_all()
+            self.newline()
 
     def stop(self):
         logger.info(format('Shutting down...'))

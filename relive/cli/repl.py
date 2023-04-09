@@ -1,36 +1,12 @@
-import logging
-from sys import stdout
+
 from os.path import isfile, join
 from os import listdir, getcwd
 from .commands import pcmds, lcmds
 from .errors import InvalidArgumentType, MissingArgument
-from relive.audio.service import AudioManager
 from relive.audio.utils import is_port, format_port
 
-logging.basicConfig(stream=stdout, level=logging.INFO,
-                    format='%(message)s')
-logger = logging.getLogger()
 
-
-class CLI:
-    file = ''
-
-    def __init__(self, debug=False) -> None:
-        self.debug = debug
-        print('Interactive shell for zynseq by danielwine.')
-        if self.debug:
-            print('DEBUG mode on.')
-        print('h: help, x: exit, enter: previous cmd')
-        print('  usage <cmd> [options]')
-        print('   e.g.: pn 62 110 0 200')
-
-    def start(self):
-        self.audio = AudioManager(
-            init_delay=0.2, verbose=True, debug=self.debug)
-        self.audio.start()
-        self.print_statistics()
-        self.console_loop()
-
+class REPL:
     def pprint(self, data):
         if type(data) == dict:
             for key, value in data.items():
@@ -54,7 +30,7 @@ class CLI:
 
     def show_help(self):
         cmds = {}
-        for method in CLI.__dict__.items():
+        for method in REPL.__dict__.items():
             if method[0].startswith('cmd_'):
                 cmds[method[0][4:]] = method[1].__doc__
         self.pprint(cmds)
@@ -115,12 +91,20 @@ class CLI:
                 self.print_statistics()
         # self.info(4)
 
-    def print_statistics(self):
-        print('FILE loaded: ', 'none' if not self.file else self.file)
-        print(f'  {"BPM:":9s}', self.audio.seq.bpm)
-        print(f'  {"BPB:":9s}', self.audio.seq.bpb)
-        print(f'  {"banks:":9s}', len(self.audio.seq.banks))
-        print(f'  {"patterns:":9s}', self.audio.seq.get_pattern_count())
+    def get_statistics(self):
+        return {
+            'file': "none" if not self.file else self.file,
+            'BPM': self.audio.seq.bpm,
+            'BPB': self.audio.seq.bpb,
+            'banks': len(self.audio.seq.banks),
+            'patterns': self.audio.seq.get_pattern_count()
+        }
+
+        return [f'FILE loaded: {"none" if not self.file else self.file}',
+                f'  {"BPM:":9s}{self.audio.seq.bpm}',
+                f'  {"BPB:":9s}{self.audio.seq.bpb}',
+                f'  {"banks:":9s}{len(self.audio.seq.banks)}',
+                f'  {"patterns:":9s}{self.audio.seq.get_pattern_count()}']
 
     def zss(self):
         zss = self.get_files('./data/zss')
@@ -180,30 +164,22 @@ class CLI:
         """print statistics"""
         self.print_statistics()
 
-    def console_loop(self):
-        quit = False
-        prev_res = ''
-        while not quit:
-            res = input(
-                f'b{self.audio.seq.bank:02d}p{self.audio.seq.pattern:02d}> ')
-            res = res.strip()
-            if res == '':
-                res = prev_res
-            else:
-                prev_res = res
-            rsplit = res.split(' ')
-            cmd = rsplit[0]
-            par = rsplit[1:] if len(rsplit) > 1 else ''
-            if cmd in ['x', 'exit', 'quit']:
-                quit = True
-            if cmd in ['h', 'help']:
-                self.show_help()
-            if hasattr(self, 'cmd_' + cmd):
-                getattr(self, 'cmd_' + cmd)(par)
-            if cmd in lcmds:
-                self.parse_libcmds(cmd, par)
-            if cmd in pcmds:
-                self.parse_pycmds(cmd, par)
-
-    def stop(self):
-        self.audio.stop()
+    def evaluate(self, res, quit=False, prev_res=''):
+        res = res.strip()
+        if res == '':
+            res = prev_res
+        else:
+            prev_res = res
+        rsplit = res.split(' ')
+        cmd = rsplit[0]
+        par = rsplit[1:] if len(rsplit) > 1 else ''
+        if cmd in ['x', 'exit', 'quit']:
+            quit = True
+        if cmd in ['h', 'help']:
+            self.show_help()
+        if hasattr(self, 'cmd_' + cmd):
+            getattr(self, 'cmd_' + cmd)(par)
+        if cmd in lcmds:
+            self.parse_libcmds(cmd, par)
+        if cmd in pcmds:
+            self.parse_pycmds(cmd, par)

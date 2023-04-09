@@ -79,7 +79,7 @@ class JackPluginNode(JackBaseNode):
 
     def launch(self):
         super().launch()
-        self.process = launch_plugin(self.uri, debug=self.debug)
+        self.process = launch_plugin(self.uri)
 
     def _connect(self, Node, action):
         for inport in self.inports:
