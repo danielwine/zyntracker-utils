@@ -7,6 +7,14 @@ from relive.audio.utils import is_port, format_port
 
 
 class REPL:
+    MSG_HEADER = 'zyntracker / zynseq interactive shell by danielwine.'
+    MSG_USAGE = 'h: help, x: exit, enter: previous cmd' \
+        '\n  usage <cmd> [options]' \
+        '\n   e.g.: pn 62 110 0 200'
+
+    def set_dir(self, snapshot_path):
+        self.snapshot_path = snapshot_path
+
     def pprint(self, data):
         if type(data) == dict:
             for key, value in data.items():
@@ -91,13 +99,19 @@ class REPL:
                 self.print_statistics()
         # self.info(4)
 
+    def get_value(self, expression, default):
+        if hasattr(self, "audio"):
+            return getattr(self.audio.seq, expression)
+        else:
+            return default
+
     def get_statistics(self):
         return {
             'file': "none" if not self.file else self.file,
-            'BPM': self.audio.seq.bpm,
-            'BPB': self.audio.seq.bpb,
-            'banks': len(self.audio.seq.banks),
-            'patterns': self.audio.seq.get_pattern_count()
+            'BPM': self.get_value('bpm', 120),
+            'BPB': self.get_value('bpb', 4),
+            'banks': len(self.get_value('banks', [])),
+            'patterns': self.get_value('pattern_count', 0)
         }
 
         return [f'FILE loaded: {"none" if not self.file else self.file}',
@@ -107,7 +121,9 @@ class REPL:
                 f'  {"patterns:":9s}{self.audio.seq.get_pattern_count()}']
 
     def zss(self):
-        zss = self.get_files('./data/zss')
+        if not self.snapshot_path:
+            return []
+        zss = self.get_files(self.snapshot_path)
         zss.sort()
         return zss
 
@@ -164,17 +180,12 @@ class REPL:
         """print statistics"""
         self.print_statistics()
 
-    def evaluate(self, res, quit=False, prev_res=''):
-        res = res.strip()
-        if res == '':
-            res = prev_res
-        else:
-            prev_res = res
+    def evaluate(self, res):
         rsplit = res.split(' ')
         cmd = rsplit[0]
         par = rsplit[1:] if len(rsplit) > 1 else ''
         if cmd in ['x', 'exit', 'quit']:
-            quit = True
+            return False
         if cmd in ['h', 'help']:
             self.show_help()
         if hasattr(self, 'cmd_' + cmd):
@@ -183,3 +194,4 @@ class REPL:
             self.parse_libcmds(cmd, par)
         if cmd in pcmds:
             self.parse_pycmds(cmd, par)
+        return True

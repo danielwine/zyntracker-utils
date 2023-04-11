@@ -1,5 +1,6 @@
 import logging
 import curses
+import time
 from sys import stdout
 from relive.io.logger import CursesHandler
 import relive.cli.colors as CLR
@@ -9,6 +10,7 @@ from relive.audio.service import AudioManager
 
 messageWindow = None
 ctrl_c_was_pressed = False
+logger = logging.getLogger()
 
 
 def print(message):
@@ -38,20 +40,21 @@ class TUIApp(REPL):
         self.screen = Screen(stdscr)
         self.screen.init_colors()
         self.initialize_screen()
+        for line in self.MSG_USAGE.split('\n'):
+            print(line)
         if self.debug:
             print('DEBUG mode on.')
-        print('h: help, x: exit, enter: previous cmd')
-        print('  usage <cmd> [options]')
-        print('   e.g.: pn 62 110 0 200')
         self.start()
 
     def setup_logging(self, message_window):
-        ch = CursesHandler(message_window)
-        cf = logging.Formatter('%(message)s')
-        ch.setFormatter(cf)
-        logger = logging.getLogger()
-        logger.addHandler(ch)
-        logger.setLevel(logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(message)s",
+            handlers=[
+                logging.StreamHandler(),
+                CursesHandler(message_window)
+            ]
+        )
 
     def initialize_screen(self):
         global messageWindow
@@ -59,8 +62,7 @@ class TUIApp(REPL):
         maxx = curses.COLS - 1
 
         self.header = Window(2, maxx, 0, 0, 0)
-        self.header.print(
-            'ZynTracker / zynseq interactive shell by danielwine.')
+        self.header.print(self.MSG_HEADER)
         self.statusbar1 = Window(1, int(maxx/2), 1, 0, 1)
         self.statusbar2 = Window(1, int(maxx/2), 1, int(maxx/2), 1)
         self.footer = Window(1, maxx, maxy, 0, 3)
@@ -76,36 +78,44 @@ class TUIApp(REPL):
         self.setup_logging(self.messages.win)
 
     def draw_status(self):
-        general_stat = self.get_statistics()
-        for item in general_stat.items():
+        self.statusbar1.clear()
+        self.statusbar2.clear()
+        for item in self.get_statistics().items():
             self.statusbar1.print(
                 f' {item[0]}: {item[1]} ', end='', pad=3, clr=3)
         self.statusbar2.print('StatusBar 2')
 
-    def draw_sequences(self):
-        sequences = self.audio.seq.list_sequences_in_bank()
-        self.sequences.print(f'BANK {self.audio.seq.bank}')
-        self.sequences.print('')
+    def draw_sequences(self, sequences):
+        if not sequences:
+            self.sequences.print(f'BANK {self.get_value("bank", 1)}')
+            self.sequences.print('')
         for sequence in sequences:
             self.sequences.print(str(sequence))
 
-    def draw_pattern_info(self):
-        self.window2.print(f'PATTERN {self.audio.seq.pattern}')
-        self.window2.print('')
-        pattern_stat = self.audio.seq.get_pattern_info()
+    def draw_pattern_info(self, pattern_stat):
+        if not pattern_stat:
+            self.window2.print(f'PATTERN {self.get_value("pattern", 1)}')
+            self.window2.print('')
         for item in pattern_stat.items():
             self.window2.print(f'{item[0]}: {item[1]}')
 
     def get_input(self):
         self.console.print(' ')
 
+    def draw(self, status={}, sequences=[], pattern_info={}):
+        self.draw_status()
+        self.draw_sequences(sequences)
+        self.draw_pattern_info(pattern_info)
+
     def start(self):
+        self.draw()
+        self.messages.print('Processing...')
         self.audio = AudioManager(
             init_delay=0.2, verbose=True, debug=self.debug)
         self.audio.start()
-        self.draw_status()
-        self.draw_sequences()
-        self.draw_pattern_info()
+        self.draw(
+            sequences=self.audio.seq.list_sequences_in_bank(),
+            pattern_info=self.audio.seq.get_pattern_info())
         self.get_input()
 
         self.loop()
@@ -151,6 +161,9 @@ class TUIApp(REPL):
                     c = self.screen.scr.get_wch()
                 elif code == 24:
                     break
+                # else:
+                    # logger.info(code)
+                    # self.console.print(chr(code))
 
         finally:
             self.screen.scr.erase()

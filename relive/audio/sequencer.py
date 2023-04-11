@@ -47,8 +47,11 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     def __init__(self):
         super().__init__()
         self.filepath = ""
-        self.get_info()
         self.pattern = 0
+
+    def initialize(self, path):
+        super().initialize(path)
+        self.get_info()
 
     def get_info(self):
         self.bpm = self.libseq.getTempo()
@@ -80,7 +83,8 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
             location += 1
         return patterns
 
-    def get_pattern_count(self):
+    @property
+    def pattern_count(self):
         return len([item for sub in self.patterns for item in sub])
 
     def list_banks(self):

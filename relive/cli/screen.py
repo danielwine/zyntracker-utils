@@ -25,6 +25,11 @@ class Window:
     def set_background(self, color_pair):
         self.win.bkgd(' ', curses.color_pair(color_pair))
 
+    def clear(self):
+        self.win.clrtobot()
+        self.active_line = 0
+        self.active_row = 0
+
     def print(self, msg, end='\n', x=0, y=0, pad=None, pad_chr=None, clr=0):
         clr = self.clr if clr == 0 else clr
         if x == 0 and y == 0:

@@ -1,8 +1,6 @@
 import os
+from os.path import dirname, realpath, exists
 from subprocess import Popen, PIPE
-
-# sys.stdout = io.StringIO()
-# sys.stderr = io.StringIO()
 
 
 class StdOut:
@@ -35,31 +33,60 @@ class StdOut:
         self.muted = False
 
 
-# def launch_plugin(uri, debug=False):
-#     if not debug:
-#         stdout.mute()
-#     ret = Popen(['jalv', uri])
-#     if not debug:
-#         stdout.unmute()
-#     return ret
-
 def launch_plugin(url):
     proc = Popen(['jalv', url], stdin=PIPE, stdout=PIPE)
     return proc
+
 
 def _popen_pipe(app, param=''):
     proc = Popen([app, param], stdout=PIPE)
     ret, err = proc.communicate()
     return ret.decode('utf-8').strip(), err
 
-def launch_and_get_code(name):
-    return _popen_pipe('pgrep', name)
 
 def kill(pid):
-    return _popen_pipe('kill', pid)
+    if type(pid) == 'string':
+        return _popen_pipe('kill', pid)
+    elif type(pid) is list:
+        for item in pid:
+            _popen_pipe('kill', item)
+
+
+def get_process_id(name):
+    return _popen_pipe('pgrep', name)
+
 
 def get_platform():
     return _popen_pipe('uname', '-m')
+
+
+def guess_engine():
+    ret, err = get_process_id('renoise')
+    return 'renoise' if ret else 'zynaddsubfx'
+
+
+def get_context():
+    zynthian_root = os.environ.get('ZYNTHIAN_DIR')
+    zynthian_path = zynthian_root + '/zynthian-ui/zynlibs/zynseq'
+    build_path = '/build/libzynseq.so'
+    local_path = dirname(realpath(__file__))
+    zynthian_full_path = zynthian_path + build_path
+    local_full_path = local_path + build_path
+    if exists(zynthian_full_path):
+        return {
+            'zynthian': True,
+            'path_lib': zynthian_full_path,
+            'path_snapshot': zynthian_root
+            + '/zynthian-my-data/snapshots/000',
+            'audio': 'zynmidirouter'
+        }
+    if exists(local_full_path):
+        return {
+            'zynthian': False,
+            'path_lib': local_full_path,
+            'path_snapshot': local_path + '/data/zss',
+            'audio': guess_engine()
+        }
 
 
 stdout = StdOut()

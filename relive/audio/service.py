@@ -7,8 +7,6 @@ from .nodes import *
 from .sequencer import Sequencer
 from relive.config import autorun_jack
 
-logger = LoggerFactory(__name__)
-
 
 class AudioBackend():
     engines = {}
@@ -26,15 +24,22 @@ class AudioBackend():
         self.delay = init_delay
         self.debug = debug
 
+    def get_logger(self):
+        self.logger = LoggerFactory(__name__)
+
     def check_services(self):
+        self.context = proc.get_context()
         for service in self.service_names:
-            self.services[service] = proc.launch_and_get_code(service)
-            logger.info(format(
+            ret, err = proc.get_process_id(service)
+            self.services[service] = ret.split('\n'), err
+            self.logger.info(format(
                 f'{service}: '
                 f'{"online" if self.is_running(service) else "offline"}')
             )
-        if self.is_running('jalv') and self.first_run:
-            logger.info(format('Jalv is killed.'))
+        if self.is_running('jalv') and (
+                self.first_run and not self.context['zynthian']):
+            self.logger.info(format('Jalv is killed.'))
+            # self.logger.info('+' + self.services['jalv'][0] + '+')
             proc.kill(self.services['jalv'][0])
         self.first_run = False
 
@@ -43,7 +48,9 @@ class AudioBackend():
             return True if len(self.services[name][0]) > 0 else False
 
     def start_engines(self):
-        logger.info(format('Initializing engines...'))
+        if self.context['zynthian']:
+            return
+        self.logger.info(format('Initializing engines...'))
         for engine_id, engine in engines.items():
             self.engines[engine_id] = JackPluginNode(
                 engine['name'], engine_id, engine['uri'],
@@ -52,18 +59,20 @@ class AudioBackend():
             sleep(self.delay)
 
     def stop_engines(self):
-        logger.info(format('  stopping engines...'))
+        if self.context['zynthian']:
+            return
+        self.logger.info(format('  stopping engines...'))
         for engine in self.engines.values():
             # print(engine.name)
             engine.process.terminate()
 
     def shutdown_client(self):
-        logger.info(format('  deactivating client...'))
+        self.logger.info(format('  deactivating client...'))
         self.client.deactivate()
         self.client.close()
 
     def connect_all(self):
-        if not self.debug:
+        if self.debug:
             stdout.unmute()
         try:
             self.systemout.plug(self.sequencer, self.client)
@@ -71,9 +80,9 @@ class AudioBackend():
                 self.systemout.plug(self.engines[engine_id], self.client)
                 self.engines[engine_id].plug(self.sequencer, self.client)
         except JackError as e:
-            logger.error(format(f'JackError: {e}'))
+            self.logger.info(format(f'JackError: {e}'))
             return
-        logger.info(format('Connections established'))
+        self.logger.info(format('Connections established'))
 
     def get_all_connections(self):
         connections = []
@@ -102,37 +111,47 @@ class AudioManager(AudioBackend):
 
     def start(self):
         self.newline()
+        self.get_logger()
         self.check_services()
         self.is_jack_running = self.is_running('jack')
         if not self.is_jack_running:
             if not autorun_jack:
-                logger.warning(
+                self.logger.warning(
                     'zynseq will not be able to access jack server.')
             else:
                 self.start_jack()
         self.newline()
-        stdout.mute()
         self.sequencer = JackSequencerNode(
             self.client_name, self.client_name)
         self.seq = Sequencer()
+        if not self.context['path_lib']:
+            self.logger.error('Missing zynseq library.')
+            self.stop()
+            exit()
+        stdout.mute()
+        self.seq.initialize(self.context['path_lib'])
         self.initialize()
         if self.debug:
             self.seq.libseq.enableDebug(True)
         if not self.is_jack_running:
             sleep(2)
-            stdout.unmute()
+        stdout.unmute()
 
     def initialize(self):
         if self.is_jack_running:
+            stdout.unmute()
             self.start_engines()
+        stdout.mute()
         self.client = self.sequencer.launch()
         self.newline()
         if self.is_jack_running:
+            stdout.unmute()
             self.connect_all()
+            stdout.mute()
             self.newline()
 
     def stop(self):
-        logger.info(format('Shutting down...'))
+        self.logger.info(format('Shutting down...'))
         # self.disconnect_all()
         self.seq.transport_stop(self.client_name)
         self.stop_engines()

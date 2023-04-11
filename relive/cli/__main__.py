@@ -3,14 +3,8 @@ import signal
 import io
 import curses
 import relive.config as cfg
-from relive.cli.colors import Col, BCol
-from .tui import (
-    TUIApp,
-    ctrl_c_handler
-)
-
-sys.stdout = io.StringIO()
-sys.stderr = io.StringIO()
+from relive.cli.colors import Col
+from .tui import ctrl_c_handler
 
 
 def custom_except_hook(exctype, value, traceback):
@@ -28,18 +22,22 @@ sys.excepthook = custom_except_hook  # noqa
 
 def main():
     if '--simple' in sys.argv:
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        # simple_cli()
+        from .cli import CLIApp
+        # sys.stdout = sys.__stdout__
+        # sys.stderr = sys.__stderr__
+        debug = cfg.debug_mode
+        if 'debug' in sys.argv:
+            debug = True
+        cli = CLIApp(debug=debug)
+        cli.start()
     else:
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
+        from .tui import TUIApp
         signal.signal(signal.SIGINT, ctrl_c_handler)
         curses.wrapper(TUIApp)
         curses.endwin()
 
 
 if __name__ == "__main__":
-    debug = cfg.debug_mode
-    if 'debug' in sys.argv:
-        debug = True
-    # cli = CLI(debug=debug)
     main()

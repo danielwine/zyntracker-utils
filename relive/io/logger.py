@@ -1,5 +1,6 @@
 import __main__
 import logging
+import time
 
 ln = ''
 
@@ -8,11 +9,12 @@ class LoggerFactory:
     def __new__(cls, name):
         global ln
         cls.name = name
-        mfile = __main__.__file__.split('/')[-2]
-        if mfile == 'cli':
+        package = __main__.__file__.split('/')[-2]
+        time.sleep(5)
+        if package == 'cli':
             ln = cls.getName(cls)
             return cls.getDefaultLogger(cls, name)
-        if mfile == 'gui':
+        if package == 'gui':
             ln = cls.getName(cls, default=False)
             return cls.getKivyLogger(cls)
 
@@ -33,14 +35,6 @@ def format(message):
     if ln != '' and message.startswith('  '):
         message = message[2:]
     return f'{ln}{message}'
-
-
-# class CursesLogger:
-#     def register_screen(self, screen):
-#         self.screen = screen
-
-#     def info(self, message):
-#         self.screen.addstr(1,0, message)
 
 
 try:
