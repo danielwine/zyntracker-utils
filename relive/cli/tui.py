@@ -1,10 +1,11 @@
 import logging
 import curses
-import time
 from sys import stdout
-from relive.io.logger import CursesHandler
 import relive.cli.colors as CLR
-from .screen import Screen, Window
+from relive.io.logger import CursesHandler
+from relive.shared.tracker import Note
+from .screen import Screen, WindowManager
+from .layout import get_layout
 from .repl import REPL
 from relive.audio.service import AudioManager
 
@@ -33,15 +34,14 @@ def ctrl_c_pressed():
 
 
 class TUIApp(REPL):
-    file = ''
-
     def __init__(self, stdscr, debug=False) -> None:
+        super().__init__()
         self.debug = debug
         self.screen = Screen(stdscr)
         self.screen.init_colors()
         self.initialize_screen()
-        for line in self.MSG_USAGE.split('\n'):
-            print(line)
+        self.print_help()
+        self.print('')
         if self.debug:
             print('DEBUG mode on.')
         self.start()
@@ -56,80 +56,83 @@ class TUIApp(REPL):
             ]
         )
 
-    def initialize_screen(self):
+    def register_callbacks(self):
         global messageWindow
-        maxy = curses.LINES - 1
-        maxx = curses.COLS - 1
+        messageWindow = self.win.messages
+        self.set_print_callback(messageWindow.print)
+        self.register_event('file_loaded', self.win.refresh_all)
 
-        self.header = Window(2, maxx, 0, 0, 0)
-        self.header.print(self.MSG_HEADER)
-        self.statusbar1 = Window(1, int(maxx/2), 1, 0, 1)
-        self.statusbar2 = Window(1, int(maxx/2), 1, int(maxx/2), 1)
-        self.footer = Window(1, maxx, maxy, 0, 3)
-        self.footer.print('Help')
-        self.messages = Window(int(maxy / 2.5), maxx, int(maxy / 2), 0, 1)
-        messageWindow = self.messages
 
-        self.console = Window(1, maxx, maxy - 3, 0, 1)
-        self.console.print('>', end='')
-        self.sequences = Window(int(maxy / 2.5), int(maxx / 4), 3, 0, 1)
-        self.window2 = Window(
-            int(maxy / 2.5), int(maxx / 4), 3, int(maxx/4), 1)
-        self.setup_logging(self.messages.win)
+    def add_data_cb(self, win, namespace, method):
+        def get_seq():
+            if hasattr(self, 'audio'):
+                if hasattr(self.audio, 'seq'):
+                        return self.audio.seq
+            return False
+        win.add_get_data_cb(get_seq, namespace, method)
+
+    def initialize_windows(self):
+        self.win.header.print(self.MSG_HEADER)
+        self.win.footer.print('ESC Window  F1 Help')
+        self.win.console.print('>', end='')
+        self.win.sequences.header = 'BANK'
+        self.win.window2.header = 'PATTERN'
+        self.add_data_cb(self.win.status, '', 'statistics')
+        self.add_data_cb(self.win.sequences, '', 'sequences_in_bank')
+        self.add_data_cb(self.win.window2, 'pattern', 'info')
+        self.add_data_cb(self.win.pattern, 'pattern', 'notes')
+
+    def initialize_renderers(self):
+        self.win.pattern.add_line_renderer(Note.get_string)
+
+    def initialize_screen(self):
+        self.win = WindowManager()
+        self.win.add(**get_layout(self.win.maxx, self.win.maxy))
+        self.initialize_windows()
+        self.setup_logging(self.win.messages)
+        self.register_callbacks()
+
+    def print_help(self):
+        print('Basic commands (press F1 for more):')
+        self.show_help(basic=True)
 
     def draw_status(self):
         self.statusbar1.clear()
         self.statusbar2.clear()
-        for item in self.get_statistics().items():
+        for item in self.audio.seq.statistics.items():
             self.statusbar1.print(
-                f' {item[0]}: {item[1]} ', end='', pad=3, clr=3)
-        self.statusbar2.print('StatusBar 2')
-
-    def draw_sequences(self, sequences):
-        if not sequences:
-            self.sequences.print(f'BANK {self.get_value("bank", 1)}')
-            self.sequences.print('')
-        for sequence in sequences:
-            self.sequences.print(str(sequence))
-
-    def draw_pattern_info(self, pattern_stat):
-        if not pattern_stat:
-            self.window2.print(f'PATTERN {self.get_value("pattern", 1)}')
-            self.window2.print('')
-        for item in pattern_stat.items():
-            self.window2.print(f'{item[0]}: {item[1]}')
+                f' {str(item[0])}: {str(item[1])} ', end='', clr=3)
+        status2 = ''
+        for key in self.audio.services:
+            status2 += f'{key}: {self.audio.is_online(key)}' + '   '
+        status2 += f'audio: {self.audio.context["audio"]}'
+        self.statusbar2.print(status2)
 
     def get_input(self):
-        self.console.print(' ')
-
-    def draw(self, status={}, sequences=[], pattern_info={}):
-        self.draw_status()
-        self.draw_sequences(sequences)
-        self.draw_pattern_info(pattern_info)
+        self.win.console.print(' ')
 
     def start(self):
-        self.draw()
-        self.messages.print('Processing...')
         self.audio = AudioManager(
-            init_delay=0.2, verbose=True, debug=self.debug)
-        self.audio.start()
-        self.draw(
-            sequences=self.audio.seq.list_sequences_in_bank(),
-            pattern_info=self.audio.seq.get_pattern_info())
-        self.get_input()
+            init_delay=0.2, verbose=False, debug=self.debug)
+        self.audio.initialize()
+        self.set_dir(self.audio.context['path_snapshot'])
 
+        self.win.refresh_all()
+        self.audio.start()
+        self.initialize_renderers()
+        self.win.refresh_all()
+        self.get_input()
         self.loop()
-        # while not quit:
-        #     res = input(
-        #         f'b{self.audio.seq.bank:02d}p{self.audio.seq.pattern:02d}> ')
 
     def loop(self):
+        self.screen.scr.nodelay(True)
         try:
             while True:
                 c = 0
+                c = self.win.console.win.getch()
                 code = 0
                 try:
-                    if ctrl_c_pressed():  # same as Ctrl+X
+                    if ctrl_c_pressed():
                         c = 24
                     else:
                         # Don't block, this allows us to refr the scr while
@@ -140,8 +143,8 @@ class TUIApp(REPL):
                         # if c == -1:
                         # continue
                         pass
-                except curses.error:
-                    continue
+                except curses.error as e:
+                    logger.error(f'Error: {e}')
 
                 if isinstance(c, int):
                     code = c
@@ -151,6 +154,8 @@ class TUIApp(REPL):
                 # scr.timeout(-1)   # resume blocking
                 if code == 27:
                     # Hitting ESC twice clears the entry line
+                    # self.messages.print('ESC')
+                    self.win.pattern.focus()
                     hist_idx = -1
                     line = ""
                 elif c == curses.KEY_RESIZE:
@@ -159,11 +164,22 @@ class TUIApp(REPL):
                     y, x = self.screen.scr.getmaxyx()
                     curses.resizeterm(y, x)
                     c = self.screen.scr.get_wch()
+                elif code == 10:
+                    self.win.messages.print('')
+                    res = self.win.console.win.instr(0, 2).decode('utf-8')
+                    self.win.console.clear()
+                    if not self.evaluate(res):
+                        break
+                    self.win.console.focus(2)
                 elif code == 24:
                     break
-                # else:
-                    # logger.info(code)
-                    # self.console.print(chr(code))
+                elif code == 127:
+                    self.console.backspace()
+                elif (code >= 48 and code <= 57) or (
+                        (code >= 97 and code <= 122)) or code == 32:
+                    self.win.console.write(chr(code))
+                elif code:
+                    self.win.messages.print(str(code))
 
         finally:
             self.screen.scr.erase()

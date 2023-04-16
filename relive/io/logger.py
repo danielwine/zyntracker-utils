@@ -1,6 +1,5 @@
 import __main__
 import logging
-import time
 
 ln = ''
 
@@ -10,7 +9,6 @@ class LoggerFactory:
         global ln
         cls.name = name
         package = __main__.__file__.split('/')[-2]
-        time.sleep(5)
         if package == 'cli':
             ln = cls.getName(cls)
             return cls.getDefaultLogger(cls, name)
@@ -47,7 +45,8 @@ except NameError:
 class CursesHandler(logging.Handler):
     def __init__(self, screen):
         logging.Handler.__init__(self)
-        self.screen = screen
+        self.screen = screen.win
+        self.win = screen
 
     def emit(self, record):
         try:
@@ -73,8 +72,7 @@ class CursesHandler(logging.Handler):
                 except UnicodeError:
                     screen.addstr(fs % msg.encode("UTF-8"))
                     screen.refresh()
-            if 'active_line' in screen:
-                screen.active_line += 1
+            self.win.active_line += 1
         except (KeyboardInterrupt, SystemExit):
             raise
         except:

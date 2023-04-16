@@ -3,6 +3,7 @@ import time
 import logging
 from json import JSONDecoder
 from os.path import dirname, realpath
+from relive.shared.tracker import TrackerPattern
 from lib.zynseq import zynseq
 
 basepath = dirname(realpath(__file__))
@@ -47,19 +48,24 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     def __init__(self):
         super().__init__()
         self.filepath = ""
-        self.pattern = 0
+        self.file = ""
 
     def initialize(self, path):
         super().initialize(path)
-        self.get_info()
-
-    def get_info(self):
-        self.bpm = self.libseq.getTempo()
-        self.bpb = self.libseq.getBeatsPerBar()
+        self.pattern = PatternManager(self.libseq)
         self.get_statistics()
+
+    def get_info_all(self):
+        return {
+            'sequences': self.list_sequences_in_bank(),
+            'pattern_info': self.pattern.get_info(),
+            'pattern': self.pattern.get_notes()
+        }
 
     def get_statistics(self):
         ls = self.libseq
+        self.bpm = ls.getTempo()
+        self.bpb = ls.getBeatsPerBar()
         self.banks = {}
         self.patterns = []
         for bnum in range(1, 255):
@@ -83,14 +89,31 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
             location += 1
         return patterns
 
+    def get_value(self, expression, default):
+        if hasattr(self, expression):
+            return getattr(self, expression)
+        else:
+            return default
+
     @property
     def pattern_count(self):
         return len([item for sub in self.patterns for item in sub])
 
+    @property
+    def statistics(self):
+        return {
+            'file': "none" if not self.file else self.file,
+            'BPM': self.get_value('bpm', 120.0),
+            'BPB': self.get_value('bpb', 4),
+            'banks': len(self.get_value('banks', {})),
+            'patterns': self.get_value('pattern_count', 0)
+        }
+
     def list_banks(self):
         return self.banks
 
-    def list_sequences_in_bank(self):
+    @property
+    def sequences_in_bank(self):
         seqs = {}
         for el in range(self.libseq.getSequencesInBank(self.bank)):
             seqs[el] = self.get_sequence_name(self.bank, el)
@@ -99,19 +122,45 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     def list_patterns(self):
         return self.patterns
 
-    def select_pattern(self, pattern):
+    def get_notes_in_pattern(self):
+        return self.pattern.notes
+
+    def test_midi(self):
+        self.libseq.playNote(62, 110, 0, 200)
+        time.sleep(1)
+        self.libseq.playNote(74, 110, 0, 200)
+        time.sleep(1)
+
+    def load_file(self, path, filename, **args):
+        self.file = filename.split(".")[0]
+        self.extension = filename.split(".")[1]
+        self.filepath = path + "/" + filename
+        return self.load_snapshot(self.filepath, **args)
+
+    # def save(self):
+    #     self.libseq.save(bytes(self.filepath, "utf-8"))
+
+    def start(self):
+        pass
+
+    def stop(self):
+        self.libseq.setPlayState(0, 0)
+        self.libseq.setPlayState(1, 0)
+
+
+class PatternManager:
+    def __init__(self, libseq) -> None:
+        super().__init__()
+        self.libseq = libseq
+        self.id = 0
+
+    def select(self, pattern):
         pattern = int(pattern)
-        self.pattern = pattern
+        self.id = pattern
         self.libseq.selectPattern(pattern)
 
-    def get_notes_track(self):
-        for track in range(self.tracks):
-            sequence_id = self.libseq.getSequence(self.song, track)
-            first_pattern = self.libseq.getPattern(sequence_id, 0)
-            self.libseq.selectPattern(first_pattern)
-            self.notes_track[track] = self.scan_notes()
-
-    def get_pattern_info(self):
+    @property
+    def info(self):
         ls = self.libseq
         return {
             'steps': ls.getSteps(),
@@ -129,7 +178,8 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
             'playhead': ls.getPatternPlayhead()
         }
 
-    def get_notes_in_pattern(self):
+    @property
+    def notes(self):
         notes = []
         for step in range(self.libseq.getSteps()):
             isStepEmpty = True
@@ -141,40 +191,3 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                     isStepEmpty = False
             if isStepEmpty: notes.append([step])
         return notes
-
-    def get_steps(self, track):
-        # libseq.selectPattern(self.pattern_ids[track])
-        # return libseq.getSteps()
-        return 32
-
-    def get_channel(self, track):
-        # sequence_id = libseq.getSequence(self.song, track)
-        # return sequence_id, libseq.getChannel(sequence_id)
-        pass
-
-    def get_pattern_ids(self):
-        for pad in range(self.tracks):
-            sequence = self.libseq.getSequence(self.song, pad)
-            self.pattern_ids.append(self.libseq.getPattern(sequence, 0))
-
-    def test_midi(self):
-        self.libseq.playNote(62, 110, 0, 200)
-        time.sleep(1)
-        self.libseq.playNote(74, 110, 0, 200)
-        time.sleep(1)
-
-    def load_file(self, path, filename, **args):
-        self.filename = filename.split(".")[0]
-        self.extension = filename.split(".")[1]
-        self.filepath = path + "/" + filename
-        return self.load_snapshot(self.filepath, **args)
-
-    # def save(self):
-    #     self.libseq.save(bytes(self.filepath, "utf-8"))
-
-    def start(self):
-        pass
-
-    def stop(self):
-        self.libseq.setPlayState(0, 0)
-        self.libseq.setPlayState(1, 0)

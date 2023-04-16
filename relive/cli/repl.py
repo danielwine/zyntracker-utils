@@ -12,38 +12,59 @@ class REPL:
         '\n  usage <cmd> [options]' \
         '\n   e.g.: pn 62 110 0 200'
 
+    def __init__(self):
+        self.print = print
+        self.events = {}
+
     def set_dir(self, snapshot_path):
         self.snapshot_path = snapshot_path
+
+    def set_print_callback(self, cb):
+        self.print = cb
+
+    def register_event(self, event, cb):
+        self.events[event] = cb
+
+    def call_event_callback(self, event):
+        if event in self.events:
+            self.events[event]()
 
     def pprint(self, data):
         if type(data) == dict:
             for key, value in data.items():
                 key = f'{key}'
                 value = 'empty' if value == False else value
-                print(f"  {key:<5s} : {value}")
+                self.print(f"  {key:<5s} : {value}")
         if type(data) == list:
             for el in data:
                 if type(el) == tuple:
                     if is_port(el[0]):
-                        print(format_port(el[0]))
+                        self.print(format_port(el[0]))
                         for port in el[1]:
-                            print('  ' + format_port(port))
+                            self.print('  ' + format_port(port))
                     else:
-                        print(f"  {el[0]}: {el[1]}")
+                        self.print(f"  {el[0]}: {el[1]}")
                 else:
                     if is_port(el):
-                        print('  ' + format_port(el))
+                        self.print('  ' + format_port(el))
                     else:
-                        print(f"  {el}")
+                        self.print(f"  {el}")
 
-    def show_help(self):
+    def mprint(self, data):
+        self.print('  ' + ' '.join([key for key in data.keys()]))
+
+    def show_help(self, basic=False):
         cmds = {}
         for method in REPL.__dict__.items():
             if method[0].startswith('cmd_'):
                 cmds[method[0][4:]] = method[1].__doc__
+        if basic:
+            self.mprint(cmds)
+            self.mprint(pcmds)
+            return
         self.pprint(cmds)
         self.pprint(pcmds)
-        print()
+        self.print('')
         self.pprint(lcmds)
 
     def convert_params(self, par, specs):
@@ -87,7 +108,7 @@ class REPL:
 
     def load(self, par):
         if not par:
-            print('Please specify file name.')
+            self.print('Please specify file name.')
             return
         files = [el for el in self.zss() if el.startswith(par[0])]
         self.file = files[0] if files else ''
@@ -95,30 +116,12 @@ class REPL:
             success = self.audio.seq.load_file(
                 getcwd() + '/data/zss', self.file)
             if success:
-                self.audio.seq.get_info()
-                self.print_statistics()
-        # self.info(4)
-
-    def get_value(self, expression, default):
-        if hasattr(self, "audio"):
-            return getattr(self.audio.seq, expression)
-        else:
-            return default
-
-    def get_statistics(self):
-        return {
-            'file': "none" if not self.file else self.file,
-            'BPM': self.get_value('bpm', 120),
-            'BPB': self.get_value('bpb', 4),
-            'banks': len(self.get_value('banks', [])),
-            'patterns': self.get_value('pattern_count', 0)
-        }
-
-        return [f'FILE loaded: {"none" if not self.file else self.file}',
-                f'  {"BPM:":9s}{self.audio.seq.bpm}',
-                f'  {"BPB:":9s}{self.audio.seq.bpb}',
-                f'  {"banks:":9s}{len(self.audio.seq.banks)}',
-                f'  {"patterns:":9s}{self.audio.seq.get_pattern_count()}']
+                self.audio.seq.get_statistics()
+                event = 'file_loaded'
+                if event in self.events:
+                    self.call_event_callback('file_loaded')
+                else:
+                    self.pprint(self.audio.seq.statistics)
 
     def zss(self):
         if not self.snapshot_path:
@@ -133,13 +136,13 @@ class REPL:
         try:
             func = getattr(self.audio.seq.libseq, fname)
             ret = self.invoke_lib_function(func, fnsplit[1:], par)
-            print(ret)
+            self.print(ret)
         except InvalidArgumentType as e:
-            print('Invalid argument.', e)
+            self.print('Invalid argument.', e)
         except MissingArgument as e:
-            print('Missing argument:', e)
+            self.print('Missing argument:', e)
         except AttributeError as e:
-            print(e)
+            self.print(e)
 
     def parse_pycmds(self, cmd, par):
         fnsplit = pcmds[cmd].split()
@@ -154,7 +157,7 @@ class REPL:
             if type(ret) is list or type(ret) is dict:
                 self.pprint(ret)
             else:
-                print(ret)
+                self.print(ret)
 
     def cmd_dir(self, par):
         """list ZSS files"""
@@ -178,7 +181,7 @@ class REPL:
 
     def cmd_info(self, par):
         """print statistics"""
-        self.print_statistics()
+        self.pprint(self.audio.seq.statistics)
 
     def evaluate(self, res):
         rsplit = res.split(' ')

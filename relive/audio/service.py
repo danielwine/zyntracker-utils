@@ -11,7 +11,7 @@ from relive.config import autorun_jack
 class AudioBackend():
     engines = {}
     client_name = 'zynseq'
-    service_names = ['jack', 'jalv']
+    service_names = ['jackd', 'jalv']
     services = {}
     midiin = None
     client = None
@@ -32,20 +32,23 @@ class AudioBackend():
         for service in self.service_names:
             ret, err = proc.get_process_id(service)
             self.services[service] = ret.split('\n'), err
-            self.logger.info(format(
-                f'{service}: '
-                f'{"online" if self.is_running(service) else "offline"}')
-            )
+            if self.verbose:
+                self.logger.info(format(
+                    f'{service}: {self.is_online(service)}'))
         if self.is_running('jalv') and (
                 self.first_run and not self.context['zynthian']):
-            self.logger.info(format('Jalv is killed.'))
-            # self.logger.info('+' + self.services['jalv'][0] + '+')
-            proc.kill(self.services['jalv'][0])
+            code = self.services['jalv'][0]
+            if self.verbose:
+                self.logger.info(format(f'Jalv is killed.'))
+            proc.kill(code)
         self.first_run = False
 
     def is_running(self, name):
         if name in self.services:
             return True if len(self.services[name][0]) > 0 else False
+
+    def is_online(self, name):
+        return "online" if self.is_running(name) else "offline"
 
     def start_engines(self):
         if self.context['zynthian']:
@@ -109,11 +112,11 @@ class AudioManager(AudioBackend):
         if self.verbose:
             print()
 
-    def start(self):
+    def initialize(self):
         self.newline()
         self.get_logger()
         self.check_services()
-        self.is_jack_running = self.is_running('jack')
+        self.is_jack_running = self.is_running('jackd')
         if not self.is_jack_running:
             if not autorun_jack:
                 self.logger.warning(
@@ -125,19 +128,14 @@ class AudioManager(AudioBackend):
             self.client_name, self.client_name)
         self.seq = Sequencer()
         if not self.context['path_lib']:
+            stdout.unmute()
             self.logger.error('Missing zynseq library.')
             self.stop()
             exit()
-        stdout.mute()
-        self.seq.initialize(self.context['path_lib'])
-        self.initialize()
-        if self.debug:
-            self.seq.libseq.enableDebug(True)
-        if not self.is_jack_running:
-            sleep(2)
-        stdout.unmute()
 
-    def initialize(self):
+    def start(self):
+        if not self.debug: stdout.mute()
+        self.seq.initialize(self.context['path_lib'])
         if self.is_jack_running:
             stdout.unmute()
             self.start_engines()
@@ -149,6 +147,11 @@ class AudioManager(AudioBackend):
             self.connect_all()
             stdout.mute()
             self.newline()
+        if self.debug:
+            self.seq.libseq.enableDebug(True)
+        if not self.is_jack_running:
+            sleep(2)
+        stdout.unmute()
 
     def stop(self):
         self.logger.info(format('Shutting down...'))

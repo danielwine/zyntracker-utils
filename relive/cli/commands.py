@@ -2,7 +2,7 @@
 pcmds = {
     'test': 'test_midi',
     'lb': 'list_banks',
-    'ls': 'list_sequences_in_bank',
+    'ls': 'sequences_in_bank',
     'lp': 'list_patterns',
     'sb': 'select_bank i',
     'sp': 'select_pattern i',

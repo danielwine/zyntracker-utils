@@ -33,8 +33,10 @@ class StdOut:
         self.muted = False
 
 
-def launch_plugin(url):
+def launch_plugin(url, debug):
+    if not debug: stdout.mute()
     proc = Popen(['jalv', url], stdin=PIPE, stdout=PIPE)
+    if not debug: stdout.unmute()
     return proc
 
 
@@ -49,7 +51,8 @@ def kill(pid):
         return _popen_pipe('kill', pid)
     elif type(pid) is list:
         for item in pid:
-            _popen_pipe('kill', item)
+            if item:
+                _popen_pipe('kill', item)
 
 
 def get_process_id(name):
@@ -66,12 +69,12 @@ def guess_engine():
 
 
 def get_context():
-    zynthian_root = os.environ.get('ZYNTHIAN_DIR')
+    zynthian_root = os.environ.get('ZYNTHIAN_DIR') or ''
     zynthian_path = zynthian_root + '/zynthian-ui/zynlibs/zynseq'
     build_path = '/build/libzynseq.so'
-    local_path = dirname(realpath(__file__))
+    local_path = dirname(realpath(__name__))
     zynthian_full_path = zynthian_path + build_path
-    local_full_path = local_path + build_path
+    local_full_path = local_path + '/lib/zynseq' + build_path
     if exists(zynthian_full_path):
         return {
             'zynthian': True,

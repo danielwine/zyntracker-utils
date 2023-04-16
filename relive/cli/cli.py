@@ -7,9 +7,8 @@ logger = logging.getLogger()
 
 
 class CLIApp(REPL):
-    file = ''
-
-    def __init__(self, debug=False) -> None:
+    def __init__(self, debug=True) -> None:
+        super().__init__()
         self.debug = debug
         print(self.MSG_HEADER)
         print(self.MSG_USAGE)
@@ -19,6 +18,7 @@ class CLIApp(REPL):
     def start(self):
         self.audio = AudioManager(
             init_delay=0.2, verbose=True, debug=self.debug)
+        self.audio.initialize()
         self.audio.start()
         self.set_dir(self.audio.context['path_snapshot'])
         self.loop()
@@ -27,7 +27,7 @@ class CLIApp(REPL):
         quit = False
         while not quit:
             res = input(
-                f'b{self.audio.seq.bank:02d}p{self.audio.seq.pattern:02d}> ')
+                f'b{self.audio.seq.bank:02d}p{self.audio.seq.pattern.id:02d}> ')
             res = res.strip()
             if res == '':
                 res = prev_res

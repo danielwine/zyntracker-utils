@@ -21,13 +21,14 @@ sys.excepthook = custom_except_hook  # noqa
 
 
 def main():
+    debug = cfg.debug_mode
+    if 'debug' in sys.argv:
+        debug = True
+
     if '--simple' in sys.argv:
         from .cli import CLIApp
         # sys.stdout = sys.__stdout__
         # sys.stderr = sys.__stderr__
-        debug = cfg.debug_mode
-        if 'debug' in sys.argv:
-            debug = True
         cli = CLIApp(debug=debug)
         cli.start()
     else:
@@ -35,7 +36,7 @@ def main():
         sys.stderr = io.StringIO()
         from .tui import TUIApp
         signal.signal(signal.SIGINT, ctrl_c_handler)
-        curses.wrapper(TUIApp)
+        curses.wrapper(TUIApp, debug=debug)
         curses.endwin()
 
 
