@@ -48,7 +48,15 @@ class AudioBackend():
             return True if len(self.services[name][0]) > 0 else False
 
     def is_online(self, name):
-        return "online" if self.is_running(name) else "offline"
+        return "OK" if self.is_running(name) else "OFF"
+
+    @property
+    def audio_status(self):
+        status = {}
+        for key in self.services:
+            status[key] = self.is_online(key)
+        status['audio'] = self.context['audio']
+        return status
 
     def start_engines(self):
         if self.context['zynthian']:

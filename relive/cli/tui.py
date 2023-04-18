@@ -1,13 +1,14 @@
 import logging
 import curses
 from sys import stdout
-import relive.cli.colors as CLR
-from relive.io.logger import CursesHandler
-from relive.shared.tracker import Note
 from .screen import Screen, WindowManager
 from .layout import get_layout
 from .repl import REPL
+from .commands import menu
+from relive.io.logger import CursesHandler
+from relive.shared.tracker import Note
 from relive.audio.service import AudioManager
+from relive.shared.xrns import XRNS
 
 messageWindow = None
 ctrl_c_was_pressed = False
@@ -37,6 +38,9 @@ class TUIApp(REPL):
     def __init__(self, stdscr, debug=False) -> None:
         super().__init__()
         self.debug = debug
+        self.audio = AudioManager(
+            init_delay=0.2, verbose=False, debug=self.debug)
+        self.xrns = XRNS()
         self.screen = Screen(stdscr)
         self.screen.init_colors()
         self.initialize_screen()
@@ -56,27 +60,45 @@ class TUIApp(REPL):
             ]
         )
 
-    def register_callbacks(self):
+    def on_pattern_change(self):
+        self.win.window2.get_data()
+        self.win.window2.refresh()
+        self.win.pattern.get_data()
+        self.win.pattern.refresh()
+
+    def register_events(self):
         global messageWindow
         messageWindow = self.win.messages
-        self.set_print_callback(messageWindow.print)
+        self.set_print_method(messageWindow.print)
         self.register_event('file_loaded', self.win.refresh_all)
-
+        self.register_event('pattern_changed', self.on_pattern_change)
 
     def add_data_cb(self, win, namespace, method):
         def get_seq():
             if hasattr(self, 'audio'):
                 if hasattr(self.audio, 'seq'):
-                        return self.audio.seq
+                    return self.audio.seq
             return False
         win.add_get_data_cb(get_seq, namespace, method)
 
+    def initialize_menu(self):
+        menu_line = ''
+        for key, name in menu.items():
+            menu_line += f'{key} {name}  '
+        self.win.footer.print(menu_line)
+
     def initialize_windows(self):
+        def get_audio():
+            if hasattr(self, 'audio'):
+                return self.audio
+
+        self.initialize_menu()
         self.win.header.print(self.MSG_HEADER)
-        self.win.footer.print('ESC Window  F1 Help')
-        self.win.console.print('>', end='')
-        self.win.sequences.header = 'BANK'
-        self.win.window2.header = 'PATTERN'
+        self.win.console.write('>')
+        self.win.sequences.header = 'BANK {.bank}'
+        self.win.window2.header = 'PATTERN {pattern.id}'
+        self.win.status2.add_get_data_cb(
+            get_audio, '', 'audio_status')
         self.add_data_cb(self.win.status, '', 'statistics')
         self.add_data_cb(self.win.sequences, '', 'sequences_in_bank')
         self.add_data_cb(self.win.window2, 'pattern', 'info')
@@ -90,18 +112,13 @@ class TUIApp(REPL):
         self.win.add(**get_layout(self.win.maxx, self.win.maxy))
         self.initialize_windows()
         self.setup_logging(self.win.messages)
-        self.register_callbacks()
+        self.register_events()
 
     def print_help(self):
         print('Basic commands (press F1 for more):')
         self.show_help(basic=True)
 
-    def draw_status(self):
-        self.statusbar1.clear()
-        self.statusbar2.clear()
-        for item in self.audio.seq.statistics.items():
-            self.statusbar1.print(
-                f' {str(item[0])}: {str(item[1])} ', end='', clr=3)
+    def draw_status2(self):
         status2 = ''
         for key in self.audio.services:
             status2 += f'{key}: {self.audio.is_online(key)}' + '   '
@@ -109,13 +126,12 @@ class TUIApp(REPL):
         self.statusbar2.print(status2)
 
     def get_input(self):
-        self.win.console.print(' ')
+        self.win.console.print(' ', end='')
 
     def start(self):
-        self.audio = AudioManager(
-            init_delay=0.2, verbose=False, debug=self.debug)
         self.audio.initialize()
-        self.set_dir(self.audio.context['path_snapshot'])
+        self.set_dir(self.audio.context['path_snapshot'],
+                     self.audio.context['path_xrns'])
 
         self.win.refresh_all()
         self.audio.start()
@@ -125,24 +141,23 @@ class TUIApp(REPL):
         self.loop()
 
     def loop(self):
-        self.screen.scr.nodelay(True)
+        self.win.console.win.nodelay(True)
+        self.win.console.win.keypad(1)
         try:
             while True:
                 c = 0
                 c = self.win.console.win.getch()
                 code = 0
+
                 try:
                     if ctrl_c_pressed():
                         c = 24
-                    else:
-                        # Don't block, this allows us to refr the scr while
-                        # waiting on initial messagebus connection, etc
-                        # scr.timeout(1)
-                        # c = scr.get_wch()
-                        #    # unicode char or int for special keys
-                        # if c == -1:
-                        # continue
-                        pass
+                    # else:
+                    #     self.screen.scr.timeout(1)
+                    #     c = self.screen.scr.get_wch()
+                    #     if c == -1:
+                    #         continue
+                    #     pass
                 except curses.error as e:
                     logger.error(f'Error: {e}')
 
@@ -151,13 +166,10 @@ class TUIApp(REPL):
                 else:
                     code = ord(c)
 
-                # scr.timeout(-1)   # resume blocking
-                if code == 27:
-                    # Hitting ESC twice clears the entry line
-                    # self.messages.print('ESC')
-                    self.win.pattern.focus()
-                    hist_idx = -1
-                    line = ""
+                # self.screen.scr.timeout(-1)   # resume blocking
+                if code == curses.KEY_F1:
+                    self.win.pattern.focus_marker(0, 0)
+                    # self.screen.scr.refresh()
                 elif c == curses.KEY_RESIZE:
                     # Generated by Curses when window/screen
                     # has been resized
@@ -165,21 +177,24 @@ class TUIApp(REPL):
                     curses.resizeterm(y, x)
                     c = self.screen.scr.get_wch()
                 elif code == 10:
-                    self.win.messages.print('')
                     res = self.win.console.win.instr(0, 2).decode('utf-8')
                     self.win.console.clear()
+                    self.win.console.print('> ', end='')
                     if not self.evaluate(res):
                         break
+                    # self.win.messages.print('')
                     self.win.console.focus(2)
-                elif code == 24:
+                elif code == 24 or code == curses.KEY_F10:
                     break
-                elif code == 127:
-                    self.console.backspace()
+                elif code == curses.KEY_BACKSPACE:
+                    self.win.console.backspace()
+                # elif c == curses.KEY_DOWN:
+                #     self.win.messages.print('DOWN')
                 elif (code >= 48 and code <= 57) or (
                         (code >= 97 and code <= 122)) or code == 32:
                     self.win.console.write(chr(code))
-                elif code:
-                    self.win.messages.print(str(code))
+                # elif code != -1:
+                #     self.win.messages.print(code)
 
         finally:
             self.screen.scr.erase()

@@ -1,5 +1,6 @@
 
-from os.path import isfile, join
+import time
+from os.path import isfile, join, splitext
 from os import listdir, getcwd
 from .commands import pcmds, lcmds
 from .errors import InvalidArgumentType, MissingArgument
@@ -13,14 +14,18 @@ class REPL:
         '\n   e.g.: pn 62 110 0 200'
 
     def __init__(self):
+        self.audio = None
         self.print = print
+        self.custom_target = False
         self.events = {}
 
-    def set_dir(self, snapshot_path):
+    def set_dir(self, snapshot_path, xrns_path):
         self.snapshot_path = snapshot_path
+        self.xrns_path = xrns_path
 
-    def set_print_callback(self, cb):
+    def set_print_method(self, cb):
         self.print = cb
+        self.custom_target = True
 
     def register_event(self, event, cb):
         self.events[event] = cb
@@ -103,32 +108,63 @@ class REPL:
             r = fn(p[0], p[1], p[2], p[3], p[4])
         return r
 
-    def get_files(self, path):
-        return [f for f in listdir(path) if isfile(join(path, f))]
+    def get_files(self, path, ext, starts_with=False):
+        if not path or not ext:
+            return False
+        files = []
+        for f in listdir(path):
+            if isfile(join(path, f)) and splitext(f)[1] == '.' + ext:
+                if starts_with and f.startswith(starts_with) \
+                        or not starts_with:
+                    files.append(f)
+        files.sort()
+        return files
+
+    def get_first_file(self, path, ext, starts_with):
+        files = self.get_files(path, ext, starts_with)
+        return files[0] if files else ''
 
     def load(self, par):
         if not par:
             self.print('Please specify file name.')
             return
-        files = [el for el in self.zss() if el.startswith(par[0])]
-        self.file = files[0] if files else ''
-        if self.file:
-            success = self.audio.seq.load_file(
-                getcwd() + '/data/zss', self.file)
-            if success:
-                self.audio.seq.get_statistics()
-                event = 'file_loaded'
-                if event in self.events:
-                    self.call_event_callback('file_loaded')
-                else:
-                    self.pprint(self.audio.seq.statistics)
+        zss = self.get_first_file(self.snapshot_path, 'zss', par[0])
+        xrns = self.get_first_file(self.xrns_path, 'xrns', par[0])
+        if zss:
+            self.load_zss(zss)
+            self.file = zss
+        elif xrns:
+            self.load_xrns(xrns)
+            self.file = xrns
+        self.file = ''
 
-    def zss(self):
-        if not self.snapshot_path:
-            return []
-        zss = self.get_files(self.snapshot_path)
-        zss.sort()
-        return zss
+    def load_zss(self, file):
+        success = self.audio.seq.load_file(
+            self.snapshot_path, file)
+        if success:
+            self.audio.seq.get_statistics()
+            if not self.emit_event('file_loaded'):
+                    self.pprint(self.audio.seq.statistics)
+        else:
+            return False
+
+    def load_xrns(self, file):
+        success = self.xrns.load(file)
+        if success:
+            info = self.xrns.project.info
+            self.audio.seq.load('')
+            self.audio.seq.libseq.setTempo(int(info['bpm']))
+            # self.audio.seq.pattern
+            # self.audio.seq.update_tempo()
+            self.audio.seq.get_statistics()
+            self.emit_event('file_loaded')
+
+    def emit_event(self, event):
+        if event in self.events:
+            self.call_event_callback(event)
+            return True
+        else:
+            return False
 
     def parse_libcmds(self, cmd, par):
         fnsplit = lcmds[cmd].split()
@@ -148,9 +184,12 @@ class REPL:
         fnsplit = pcmds[cmd].split()
         fname = fnsplit[0]
         func = getattr(self.audio.seq, fname)
-        par = self.convert_params(par, fnsplit)
+        par = self.convert_params(par, fnsplit[1:])
         if len(fnsplit) == 1:
-            ret = func()
+            if callable(func):
+                ret = func()
+            else:
+                ret = func
         if len(fnsplit) > 1:
             ret = func(*par)
         if ret:
@@ -161,7 +200,8 @@ class REPL:
 
     def cmd_dir(self, par):
         """list ZSS files"""
-        self.pprint(self.zss())
+        self.pprint(self.get_files(self.snapshot_path, 'zss'))
+        self.pprint(self.get_files(self.xrns_path, 'xrns'))
 
     def cmd_load(self, par):
         """load ZSS file"""
@@ -183,6 +223,14 @@ class REPL:
         """print statistics"""
         self.pprint(self.audio.seq.statistics)
 
+    def check_events(self,cmd):
+        if cmd == 'sp':
+            self.call_event_callback('pattern_changed')
+
+    def print_newline(self):
+        if self.custom_target:
+            self.print('')
+
     def evaluate(self, res):
         rsplit = res.split(' ')
         cmd = rsplit[0]
@@ -195,6 +243,10 @@ class REPL:
             getattr(self, 'cmd_' + cmd)(par)
         if cmd in lcmds:
             self.parse_libcmds(cmd, par)
+            self.check_events(cmd)
+            self.print_newline()
         if cmd in pcmds:
             self.parse_pycmds(cmd, par)
+            self.check_events(cmd)
+            self.print_newline()
         return True

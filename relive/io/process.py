@@ -81,6 +81,7 @@ def get_context():
             'path_lib': zynthian_full_path,
             'path_snapshot': zynthian_root
             + '/zynthian-my-data/snapshots/000',
+            'path_xrns': '',
             'audio': 'zynmidirouter'
         }
     if exists(local_full_path):
@@ -88,6 +89,7 @@ def get_context():
             'zynthian': False,
             'path_lib': local_full_path,
             'path_snapshot': local_path + '/data/zss',
+            'path_xrns': local_path + '/data/xrns',
             'audio': guess_engine()
         }
 

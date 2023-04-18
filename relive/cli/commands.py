@@ -6,7 +6,7 @@ pcmds = {
     'lp': 'list_patterns',
     'sb': 'select_bank i',
     'sp': 'select_pattern i',
-    'pi': 'get_pattern_info',
+    'pi': 'pattern_info',
     'pp': 'get_notes_in_pattern',
     'start': 'transport_start',
     'stop': 'transport_stop',
@@ -22,7 +22,7 @@ lcmds = {
     'cp': 'createPattern',
     'gpt': 'getPatternsInTrack i i i',
     'gs': 'getSteps',
-    ## Sequence management
+    # Sequence management
     'gsn': 'getSequenceName i i',
     'gts': 'getTracksInSequence i i',
     'tps': 'togglePlayState i i',
@@ -30,4 +30,10 @@ lcmds = {
     'gsb': 'getSequencesInBank i',
     't': 'getTempo',
     'tgps': 'transportGetPlayStatus',
+}
+
+menu = {
+    'F1': 'Window',
+    'F9': 'Commands',
+    'F10': 'Exit'
 }

@@ -58,7 +58,7 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     def get_info_all(self):
         return {
             'sequences': self.list_sequences_in_bank(),
-            'pattern_info': self.pattern.get_info(),
+            'pattern_info': self.pattern.info(),
             'pattern': self.pattern.get_notes()
         }
 
@@ -113,11 +113,18 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         return self.banks
 
     @property
+    def pattern_info(self):
+        return self.pattern.info
+
+    @property
     def sequences_in_bank(self):
         seqs = {}
         for el in range(self.libseq.getSequencesInBank(self.bank)):
             seqs[el] = self.get_sequence_name(self.bank, el)
         return seqs
+
+    def select_pattern(self, pattern):
+        return self.pattern.select(pattern)
 
     def list_patterns(self):
         return self.patterns
@@ -159,6 +166,12 @@ class PatternManager:
         self.id = pattern
         self.libseq.selectPattern(pattern)
 
+    def import_pattern(self, pattern):
+        if not isinstance(pattern, TrackerPattern):
+            return False
+        stream = pattern.get_sequencer_stream()
+        self.notes = stream
+
     @property
     def info(self):
         ls = self.libseq
@@ -191,3 +204,9 @@ class PatternManager:
                     isStepEmpty = False
             if isStepEmpty: notes.append([step])
         return notes
+
+    @notes.setter
+    def notes(self, note_list):
+        for note in note_list:
+            print(note)
+            # self.libseq.addNote(note[0], note[1], note[2], note[3])

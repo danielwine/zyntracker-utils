@@ -11,11 +11,12 @@ def get_layout(mx, my):
                 int(my / 2.5), int(mx / 2) - 1, int(my / 2), 0, 1]
         },
         'data': {
-            'status': [1, int(mx/1.5), 1, 0, 1],
+            'status': [1, int(mx/1.6), 1, 0, 1],
+            'status2': [1, int(mx/2), 1, int(mx/1.6), 1],
             'sequences': [int(my / 2.5), int(mx / 4), 3, 0, 1],
             'window2': [int(my / 2.5), int(mx / 4), 3, int(mx/4), 1]
         },
         'pattern': {
-            'pattern': [my - 3, int(mx / 2), 3, int(mx/2), 4]
+            'pattern': [my-3, int(mx / 2), 3, int(mx/2), 4]
         }
     }

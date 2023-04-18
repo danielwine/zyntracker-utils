@@ -89,6 +89,9 @@ class XRNS:
         self.tree = self.source.load(filename)
         self.root = self.tree.getroot()
         self.get_data()
+        if self.tree is None:
+            return False
+        return True
 
     def get_data(self):
         try:

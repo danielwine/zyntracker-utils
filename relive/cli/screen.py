@@ -72,13 +72,29 @@ class Window:
         self.win.bkgd(' ', curses.color_pair(color_pair))
 
     def focus(self, row=0):
-        self.win.move(0, row)
+        self.move(0, row)
+        self.win.refresh()
+        # curses.setsyx(1,0)
+        # time.sleep(4)
+
+    def focus_marker(self, y, x):
+        self.move(y, x)
+        self.print('[0', clr=3)
         self.win.refresh()
 
+    def move(self, y, x):
+        self.win.move(y, x)
+        self.active_line = y
+        self.active_row = x
+
+    def move_pos_back(self):
+        if self.active_row > 2:
+            self.move(self.active_line, self.active_row-1)
+
     def backspace(self):
-        self.print(f'{self.active_line} {self.active_row -1}', end='')
-        # self.win.move(self.active_line, self.active_row - 1)
-        # self.write(' ')
+        self.move_pos_back()
+        self.print(' ', end='')
+        self.move_pos_back()
 
     def clear(self):
         self.win.erase()
@@ -86,9 +102,10 @@ class Window:
         self.active_row = 0
         self.win.refresh()
 
-    def write(self, char):
+    def write(self, char, move=True):
         self.win.addch(char)
-        self.active_row += 1
+        if move:
+            self.active_row += 1
         self.win.refresh()
 
     def print(self, msg, end='\n', x=0, y=0,
@@ -119,7 +136,10 @@ class Window:
             clr = CLR.CLR_LOG1
         self.active_row += len(msg)
         maxy, maxx = self.win.getmaxyx()
-        self.win.addstr(y, x, s, clr)
+        try:
+            self.win.addstr(y, x, s, clr)
+        except:
+            logging.error('Curses Error while printing.')
         if self.active_line + 1 == maxy and self.height > 1:
             if self.scrollable:
                 self.win.scroll()
@@ -145,8 +165,20 @@ class DataWindow(Window):
         self.hide_empty = hide_empty
         self.cb_get_data = None
 
-    def add_get_data_cb(self, object, namespace, method):
-        self.cb_get_data = [object, namespace, method]
+    def add_get_data_cb(self, object, namespace, prop):
+        self.cb_get_data = [object, namespace, prop]
+
+    def get_data_from_object(self, namespace, prop):
+        data = {}
+        if namespace == '':
+            if hasattr(self.obj, prop):
+                data = getattr(self.obj, prop)
+        else:
+            if hasattr(self.obj, namespace):
+                sub = getattr(self.obj, namespace)
+                if hasattr(sub, prop):
+                    data = getattr(sub, prop)
+        return data
 
     def get_data(self):
         self.data = {}
@@ -154,26 +186,35 @@ class DataWindow(Window):
         if not cb:
             return False
         getter = cb[0]
-        obj = getter()
-        if cb and obj:
-            if cb[1] == '':
-                if hasattr(obj, cb[2]):
-                    self.data = getattr(obj, cb[2])
-            else:
-                if hasattr(obj, cb[1]):
-                    sub = getattr(obj, cb[1])
-                    if hasattr(sub, cb[2]):
-                        self.data = getattr(sub, cb[2])
+        self.obj = getter()
+        if cb and self.obj:
+            self.data = self.get_data_from_object(cb[1], cb[2])
+
+    def parse_header(self):
+        if '{' in self.header:
+            hsplit = self.header.split('{')
+            value = hsplit[1][:-1]
+            ns, pr = value.split('.') if '.' in value else [value, '']
+            return [hsplit[0], self.get_data_from_object(ns, pr)]
+        else:
+            return [self.header, '']
 
     def refresh(self):
         self.clear()
         if self.header and self.vertical:
-            self.print(self.header)
+            key, value = self.parse_header()
+            if value == {}:
+                value = ''
+            self.print(f'{key} {value}')
             self.print('')
         if self.data:
             for item in self.data.items():
                 if not (item[1] == '' and self.hide_empty):
-                    msg = f'{str(item[0])}: {str(item[1])}'
+                    key = item[0]
+                    if self.vertical:
+                        key = f'{key:02}' if type(key) is int \
+                            else f'{str(key):9}'
+                    msg = f'{key}: {str(item[1])}'
                     msg = msg if self.vertical else f' {msg} '
                     self.print(
                         msg, end='\n' if self.vertical else '')
@@ -198,4 +239,4 @@ class PatternWindow(DataWindow):
                     repr = self.cb_line_renderer(step[1])
                 else:
                     repr = ''
-                self.print(f'[{step[0]}] {repr}')
+                self.print(f'[{step[0]:02}] {repr}')
