@@ -3,21 +3,19 @@ import time
 from os.path import isfile, join, splitext
 from os import listdir, getcwd
 from .commands import pcmds, lcmds
-from .errors import InvalidArgumentType, MissingArgument
 from relive.audio.utils import is_port, format_port
+from relive.cli.messages import (
+    MSG_HEADER, MSG_USAGE, ERR_INVALID, ERR_MISSING_ARG)
 
 
 class REPL:
-    MSG_HEADER = 'zyntracker / zynseq interactive shell by danielwine.'
-    MSG_USAGE = 'h: help, x: exit, enter: previous cmd' \
-        '\n  usage <cmd> [options]' \
-        '\n   e.g.: pn 62 110 0 200'
 
     def __init__(self):
         self.audio = None
         self.print = print
         self.custom_target = False
         self.events = {}
+        self.last_multi = False
 
     def set_dir(self, snapshot_path, xrns_path):
         self.snapshot_path = snapshot_path
@@ -79,20 +77,26 @@ class REPL:
                 if par[num].isnumeric():
                     ret.append(int(par[num]))
                 else:
-                    raise InvalidArgumentType('numeric value')
+                    self.print_newline_on(1)
+                    self.print(f'{ERR_INVALID}: numeric')
+                    return False
             if typ == 'b':
                 nm = int(par[num])
                 if nm >= 0 and nm < 2:
                     ret.append(False if nm == 0 else True)
                 else:
-                    raise InvalidArgumentType('boolean')
+                    self.print(f'{ERR_INVALID}: boolean')
+                    return False
         return ret
 
     def invoke_lib_function(self, fn, specs, p):
         if len(p) < len(specs):
             arg = specs[len(p)]
-            raise MissingArgument(arg)
+            self.print('f{ERR_MISSING_ARG}: {arg}')
+            return False
         p = self.convert_params(p, specs)
+        if not p:
+            return False
         lp = len(p)
         if lp == 0:
             r = fn()
@@ -127,7 +131,7 @@ class REPL:
     def load(self, par):
         if not par:
             self.print('Please specify file name.')
-            return
+            return False
         zss = self.get_first_file(self.snapshot_path, 'zss', par[0])
         xrns = self.get_first_file(self.xrns_path, 'xrns', par[0])
         if zss:
@@ -144,7 +148,7 @@ class REPL:
         if success:
             self.audio.seq.get_statistics()
             if not self.emit_event('file_loaded'):
-                    self.pprint(self.audio.seq.statistics)
+                self.pprint(self.audio.seq.statistics)
         else:
             return False
 
@@ -172,11 +176,10 @@ class REPL:
         try:
             func = getattr(self.audio.seq.libseq, fname)
             ret = self.invoke_lib_function(func, fnsplit[1:], par)
-            self.print(ret)
-        except InvalidArgumentType as e:
-            self.print('Invalid argument.', e)
-        except MissingArgument as e:
-            self.print('Missing argument:', e)
+            if ret:
+                self.print(ret)
+            else:
+                return False
         except AttributeError as e:
             self.print(e)
 
@@ -185,6 +188,8 @@ class REPL:
         fname = fnsplit[0]
         func = getattr(self.audio.seq, fname)
         par = self.convert_params(par, fnsplit[1:])
+        if par is False:
+            return False
         if len(fnsplit) == 1:
             if callable(func):
                 ret = func()
@@ -193,7 +198,11 @@ class REPL:
         if len(fnsplit) > 1:
             ret = func(*par)
         if ret:
-            if type(ret) is list or type(ret) is dict:
+            is_list = type(ret) is list
+            is_dict = type(ret) is dict
+            items = ret if is_list else ret.items()
+            self.print_newline_on(len(items))
+            if is_dict or is_list:
                 self.pprint(ret)
             else:
                 self.print(ret)
@@ -223,15 +232,21 @@ class REPL:
         """print statistics"""
         self.pprint(self.audio.seq.statistics)
 
-    def check_events(self,cmd):
+    def check_events(self, cmd):
         if cmd == 'sp':
             self.call_event_callback('pattern_changed')
 
-    def print_newline(self):
-        if self.custom_target:
+    def print_newline_on(self, item_number):
+        if item_number > 1:
             self.print('')
+            self.last_multi = True
+        else:
+            if self.last_multi:
+                self.print('')
+            self.last_multi = False
 
     def evaluate(self, res):
+        success = True
         rsplit = res.split(' ')
         cmd = rsplit[0]
         par = rsplit[1:] if len(rsplit) > 1 else ''
@@ -240,13 +255,12 @@ class REPL:
         if cmd in ['h', 'help']:
             self.show_help()
         if hasattr(self, 'cmd_' + cmd):
+            self.print('')
             getattr(self, 'cmd_' + cmd)(par)
         if cmd in lcmds:
-            self.parse_libcmds(cmd, par)
+            success = self.parse_libcmds(cmd, par)
             self.check_events(cmd)
-            self.print_newline()
         if cmd in pcmds:
-            self.parse_pycmds(cmd, par)
+            success = self.parse_pycmds(cmd, par)
             self.check_events(cmd)
-            self.print_newline()
         return True

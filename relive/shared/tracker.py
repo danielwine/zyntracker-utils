@@ -11,8 +11,8 @@ class Note:
         self.duration = duration
 
     def __repr__(self) -> str:
-        return f'{Note.get_string(self.midi)}, ' \
-           f'{self.velocity}, {self.duration}'
+        return f'[{Note.get_string(self.midi)}, ' \
+            f'{self.velocity}, {self.duration}]'
 
     @property
     def values(self):
@@ -21,10 +21,10 @@ class Note:
     @classmethod
     def get_string(cls, code):
         code = int(code)
-        if code < 23:
-            return cls.EMPTY
         if code == -1:
             return cls.OFFNOTE
+        if code < 23:
+            return cls.EMPTY
         code = code - 24
         octave = int(code / 12)
         note = Note.NOTES[code % 12]
@@ -48,73 +48,58 @@ class TrackerPattern:
         self.duration_measure = 4
         if line_number > 0 and notes:
             self.add_notes(notes)
-            self.get_all_note_durations()
+            self.calculate_durations()
 
     def __repr__(self) -> str:
         return []
 
     def add_notes(self, notes):
-        for step, cnotes in notes.items():
-            cnotes_target = []
-            for note in cnotes:
-                cnotes_target.append(note)
-            self._notes[step] = cnotes_target
+        self._notes = {}
+        print(notes)
+        polyphony = self.get_polyphony_level(notes)
+        for step in range(self.line_number):
+            self._notes[step] = [None] * polyphony
+            if step in notes:
+                for num, note in enumerate(notes[step]):
+                    self._notes[step][num] = note
 
     @property
     def notes(self):
         return self._notes
 
-    @property
-    def polyphony_level(self):
-        return max([len(notes) for step, notes in self._notes.items()])
+    def get_polyphony_level(self, notes):
+        return max([len(notes) for step, notes in notes.items()])
 
-    def get_note_at(self, note_line, note_col):
-        if note_line not in self._notes:
-            return False
-        line = self._notes[note_line]
-        if len(line) < note_col + 1:
-            return False
-        if line[note_col] == None:
-            return False
-        else:
-            return line[note_col]
+    def get_note(self, line, col):
+        return self._notes[line, col]
 
-    def get_all_note_durations(self):
-        for column in range(self.polyphony_level):
+    def set_note(self, line, col, note):
+        self._notes[line, col] = note
+
+    def calculate_durations(self):
+        polyphony = len(self._notes[0])
+        for column in range(polyphony):
             last_step = 0
             last_note = Note()
-            items = self._notes.items()
-            for step, notes in items:
-                if step >= self.line_number:
-                    # don't calculate durations for invisible notes
-                    last_note.duration = self.line_number - last_step
-                    break
-                if len(notes) < column + 1:
-                    continue
-                if notes[column] is not None:
+            for step in range(self.line_number):
+                cell = self._notes[step][column]
+                if cell:
                     last_note.duration = step - last_step
-                    last_note = notes[column]
+                    last_note = cell
                     last_step = step
-            last_note.duration = self.line_number - last_step
+            last_note.duration = step - last_step + 1
 
-    def _get_note_duration_for(self, note_line, note_col):
-        if not self.get_note_at(note_line, note_col):
-            return
-        steps = list(self._notes.keys())
-        sidx = steps.index(note_line)
-        for line_nr in steps[sidx+1:]:
-            ln = self._notes[line_nr]
-            if len(ln) < note_col + 1:
-                continue
-            cn = self._notes[line_nr][note_col]
-            if cn is not None:
-                # print('INTERRUPT! ', line_nr, note_col)
-                return line_nr - note_line
+    def calculate_duration_for(self, line, col):
+        note = self.get_note(line, col)
+        for step in range(line + 1, self.line_number):
+            cell = self._notes[step][col]
+            if cell:
+                note.duration = step - line
 
     def get_sequencer_stream(self):
         lines = []
         for step in range(self.line_number):
-            if step in self._notes:
+            if any(self._notes[step]):
                 for note in self._notes[step]:
                     if note is not None and note.midi != -1:
                         l = [step, note.midi,
@@ -122,9 +107,6 @@ class TrackerPattern:
                              note.duration / self.duration_measure]
                         lines.append(l)
         return lines
-
-    def get_tracker_stream(self):
-        pass
 
 
 class TrackerPhrase:

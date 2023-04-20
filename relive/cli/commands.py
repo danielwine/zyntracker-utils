@@ -33,7 +33,9 @@ lcmds = {
 }
 
 menu = {
-    'F1': 'Window',
-    'F9': 'Commands',
+    'F1': 'Terminal',
+    'F2': 'Sequences',
+    'F3': 'Pattern',
+    'F9': 'Help',
     'F10': 'Exit'
 }

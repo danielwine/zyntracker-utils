@@ -2,6 +2,7 @@ import logging
 from .repl import REPL
 from relive.audio.service import AudioManager
 from relive.shared.xrns import XRNS
+from relive.cli.messages import MSG_HEADER, MSG_USAGE
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger()
@@ -12,8 +13,8 @@ class CLIApp(REPL):
         super().__init__()
         self.debug = debug
         self.xrns = XRNS()
-        print(self.MSG_HEADER)
-        print(self.MSG_USAGE)
+        print(MSG_HEADER)
+        print(MSG_USAGE)
         if self.debug:
             print('DEBUG mode on.')
 

@@ -178,9 +178,10 @@ if __name__ == '__main__':
     print(xrns.project.info)
 
     for item in xrns.project.get_group(0).phrases:
+        for key, note in item.notes.items():
+            print(key, note)
+        print(item.notes)
         print('Stream:')
         stream = item.pattern.get_sequencer_stream()
-        print(stream)
-        print('GET', item.pattern.get_note_at(4, 0))
-        # print('DUR ', item.pattern._get_note_duration_for(4, 0))
-        # print('--')
+        for item in stream:
+            print(item)

@@ -9,6 +9,7 @@ from relive.io.logger import CursesHandler
 from relive.shared.tracker import Note
 from relive.audio.service import AudioManager
 from relive.shared.xrns import XRNS
+from relive.cli.messages import MSG_HEADER
 
 messageWindow = None
 ctrl_c_was_pressed = False
@@ -82,9 +83,9 @@ class TUIApp(REPL):
         win.add_get_data_cb(get_seq, namespace, method)
 
     def initialize_menu(self):
-        menu_line = ''
+        menu_line = '  '
         for key, name in menu.items():
-            menu_line += f'{key} {name}  '
+            menu_line += f'{key} {name}   '
         self.win.footer.print(menu_line)
 
     def initialize_windows(self):
@@ -93,7 +94,6 @@ class TUIApp(REPL):
                 return self.audio
 
         self.initialize_menu()
-        self.win.header.print(self.MSG_HEADER)
         self.win.console.write('>')
         self.win.sequences.header = 'BANK {.bank}'
         self.win.window2.header = 'PATTERN {pattern.id}'
@@ -115,15 +115,9 @@ class TUIApp(REPL):
         self.register_events()
 
     def print_help(self):
-        print('Basic commands (press F1 for more):')
+        self.win.messages.print(MSG_HEADER, clr=1)
+        print('Basic commands (press F9 for more):')
         self.show_help(basic=True)
-
-    def draw_status2(self):
-        status2 = ''
-        for key in self.audio.services:
-            status2 += f'{key}: {self.audio.is_online(key)}' + '   '
-        status2 += f'audio: {self.audio.context["audio"]}'
-        self.statusbar2.print(status2)
 
     def get_input(self):
         self.win.console.print(' ', end='')
@@ -182,7 +176,6 @@ class TUIApp(REPL):
                     self.win.console.print('> ', end='')
                     if not self.evaluate(res):
                         break
-                    # self.win.messages.print('')
                     self.win.console.focus(2)
                 elif code == 24 or code == curses.KEY_F10:
                     break

@@ -6,8 +6,15 @@ _*.sh
 data/xrns
 data/RIFF
 data/temp
+data/projects
 scripts/_*
+relive/shared/_x*.py
 *.tmp
+
+# docs
+
+docs/
 
 # builds
 lib/zynseq/build
+lib/*

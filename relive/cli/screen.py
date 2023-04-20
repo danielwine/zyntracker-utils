@@ -36,11 +36,16 @@ class WindowManager:
                 cls = DataWindow
             elif category == 'pattern':
                 cls = PatternWindow
+
             for window_name, params in kwargs[category].items():
-                pn = 'height', 'width', 'begin_y', 'begin_x', 'clr'
+                pn = 'height', 'width', 'begin_y', 'begin_x', 'clr', 'hclr'
+                separator = True if window_name \
+                    in ['sequences', 'window2'] else False
+                hide_empty = True if window_name == 'sequences' else False
+
                 win = cls(
                     **{name: params[num] for num, name in enumerate(pn)},
-                    hide_empty=True if window_name == 'sequences' else False)
+                    hide_empty=hide_empty, separator=separator)
                 self._update({window_name: win})
 
     def refresh_all(self):
@@ -52,11 +57,15 @@ class WindowManager:
 
 class Window:
     def __init__(
-            self,  scrollable=False, **kwargs):
+            self,
+            scrollable=False, separator=False,
+            **kwargs):
         self.win = curses.newwin(
             kwargs['height'], kwargs['width'],
             kwargs['begin_y'], kwargs['begin_x'])
         self.scrollable = scrollable
+        self.separator = separator
+        self.header = ''
         if scrollable:
             # self.win.setscrreg(0, 1)
             self.win.scrollok(True)
@@ -66,7 +75,9 @@ class Window:
         self.active_line = 0
         self.active_row = 0
         self.height = kwargs['height']
+        self.width = kwargs['width']
         self.clr = kwargs['clr']
+        self.hclr = kwargs['hclr']
 
     def set_background(self, color_pair):
         self.win.bkgd(' ', curses.color_pair(color_pair))
@@ -108,6 +119,28 @@ class Window:
             self.active_row += 1
         self.win.refresh()
 
+    def draw_separator(self):
+        if self.separator:
+            self.print('_' * (self.width - 1), y=self.height - 2, end='')
+
+    def parse_header(self):
+        if '{' in self.header:
+            hsplit = self.header.split('{')
+            value = hsplit[1][:-1]
+            ns, pr = value.split('.') if '.' in value else [value, '']
+            return [hsplit[0], self.get_data_from_object(ns, pr)]
+        else:
+            return [self.header, '']
+
+    def draw_header(self):
+        key, value = self.parse_header()
+        if value == {}:
+            value = ''
+        header = f' {key} {value}'
+        self.print(header + ' ' * (self.width -
+                   len(header) - 4), clr=self.hclr)
+        self.print('')
+
     def print(self, msg, end='\n', x=0, y=0,
               pad=None, pad_chr=None, clr=0):
         clr = self.clr if clr == 0 else clr
@@ -137,7 +170,7 @@ class Window:
         self.active_row += len(msg)
         maxy, maxx = self.win.getmaxyx()
         try:
-            self.win.addstr(y, x, s, clr)
+            self.win.addstr(y, x, s, curses.color_pair(clr))
         except:
             logging.error('Curses Error while printing.')
         if self.active_line + 1 == maxy and self.height > 1:
@@ -160,7 +193,6 @@ class DataWindow(Window):
         super().__init__(**kwargs, scrollable=True)
         self.data = {}
         self.vertical = True if kwargs['height'] > 1 else False
-        self.header = ''
         self.pending = False
         self.hide_empty = hide_empty
         self.cb_get_data = None
@@ -190,23 +222,10 @@ class DataWindow(Window):
         if cb and self.obj:
             self.data = self.get_data_from_object(cb[1], cb[2])
 
-    def parse_header(self):
-        if '{' in self.header:
-            hsplit = self.header.split('{')
-            value = hsplit[1][:-1]
-            ns, pr = value.split('.') if '.' in value else [value, '']
-            return [hsplit[0], self.get_data_from_object(ns, pr)]
-        else:
-            return [self.header, '']
-
     def refresh(self):
         self.clear()
         if self.header and self.vertical:
-            key, value = self.parse_header()
-            if value == {}:
-                value = ''
-            self.print(f'{key} {value}')
-            self.print('')
+            self.draw_header()
         if self.data:
             for item in self.data.items():
                 if not (item[1] == '' and self.hide_empty):
@@ -218,6 +237,7 @@ class DataWindow(Window):
                     msg = msg if self.vertical else f' {msg} '
                     self.print(
                         msg, end='\n' if self.vertical else '')
+        self.draw_separator()
 
 
 class PatternWindow(DataWindow):

@@ -2,21 +2,20 @@
 def get_layout(mx, my):
     return {
         'standard': {
-            'header': [2, mx, 0, 0, 0],
-            'footer': [1, mx, my, 0, 3],
-            'console': [1, int(mx / 2) - 1, my - 3, 0, 1]
+            'footer': [1, mx, my, 0, 5, 10],
+            'console': [1, int(mx / 2) - 1, my - 2, 0, 1, 10]
         },
         'message': {
             'messages': [
-                int(my / 2.5), int(mx / 2) - 1, int(my / 2), 0, 1]
+                int(my / 2) + 1, int(mx / 2) - 3, 22, 1, 7, 10]
         },
         'data': {
-            'status': [1, int(mx/1.6), 1, 0, 1],
-            'status2': [1, int(mx/2), 1, int(mx/1.6), 1],
-            'sequences': [int(my / 2.5), int(mx / 4), 3, 0, 1],
-            'window2': [int(my / 2.5), int(mx / 4), 3, int(mx/4), 1]
+            'status': [1, int(mx / 1.6), 0, 0, 2, 11],
+            'status2': [1, int(mx / 2), 0, int(mx/1.6), 2, 11],
+            'sequences': [20, int(mx / 4), 2, 1, 3, 10],
+            'window2': [20, int(mx / 4), 2, int(mx/4), 3, 10]
         },
         'pattern': {
-            'pattern': [my-3, int(mx / 2), 3, int(mx/2), 4]
+            'pattern': [my - 3, int(mx / 2), 2, int(mx / 2), 4, 10]
         }
     }
