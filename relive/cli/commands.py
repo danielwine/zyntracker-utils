@@ -2,7 +2,8 @@
 pcmds = {
     'test': 'test_midi',
     'lb': 'list_banks',
-    'ls': 'sequences_in_bank',
+    'ls': 'sequence_names',
+    'lsp': 'get_props_of_sequence i',
     'lp': 'list_patterns',
     'sb': 'select_bank i',
     'sp': 'select_pattern i',

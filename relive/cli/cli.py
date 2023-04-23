@@ -1,6 +1,6 @@
 import logging
 from .repl import REPL
-from relive.audio.service import AudioManager
+from relive.audio.audio import AudioManager
 from relive.shared.xrns import XRNS
 from relive.cli.messages import MSG_HEADER, MSG_USAGE
 

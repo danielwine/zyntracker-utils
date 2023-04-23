@@ -34,6 +34,8 @@ class WindowManager:
                 cls = MessageWindow
             elif category == 'data':
                 cls = DataWindow
+            elif category == 'sequence':
+                cls = SequenceWindow
             elif category == 'pattern':
                 cls = PatternWindow
 
@@ -205,6 +207,8 @@ class DataWindow(Window):
         if namespace == '':
             if hasattr(self.obj, prop):
                 data = getattr(self.obj, prop)
+                if callable(data):
+                    data = data()
         else:
             if hasattr(self.obj, namespace):
                 sub = getattr(self.obj, namespace)
@@ -222,6 +226,16 @@ class DataWindow(Window):
         if cb and self.obj:
             self.data = self.get_data_from_object(cb[1], cb[2])
 
+    def render_item(self, item):
+        key, value = item
+        if self.vertical:
+            key = f'{key:02}' if type(key) is int \
+                else f'{str(key):9}'
+        msg = f' {key}: {str(value)}'
+        msg = msg if self.vertical else f' {msg} '
+        self.print(
+            msg, end='\n' if self.vertical else '')
+
     def refresh(self):
         self.clear()
         if self.header and self.vertical:
@@ -229,15 +243,22 @@ class DataWindow(Window):
         if self.data:
             for item in self.data.items():
                 if not (item[1] == '' and self.hide_empty):
-                    key = item[0]
-                    if self.vertical:
-                        key = f'{key:02}' if type(key) is int \
-                            else f'{str(key):9}'
-                    msg = f'{key}: {str(item[1])}'
-                    msg = msg if self.vertical else f' {msg} '
-                    self.print(
-                        msg, end='\n' if self.vertical else '')
+                    self.render_item(item)
         self.draw_separator()
+
+
+class SequenceWindow(DataWindow):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.data = {}
+
+    def render_item(self, item):
+        key, value = item
+        grp = value['group']
+        if not value['name']: return
+        self.print(f'{key:02}: ', end = '')
+        clr = 20 + grp if grp and grp >= 0 and grp < 5 else 0
+        self.print(value['name'], end='\n', clr=clr)
 
 
 class PatternWindow(DataWindow):

@@ -157,5 +157,8 @@ class TrackerProject:
         for group in groups:
             self._groups.append(TrackerGroup(**group))
 
+    def get_groups(self):
+        return self._groups
+
     def get_group(self, number):
         return self._groups[number]

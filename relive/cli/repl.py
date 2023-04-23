@@ -154,14 +154,26 @@ class REPL:
 
     def load_xrns(self, file):
         success = self.xrns.load(file)
-        if success:
-            info = self.xrns.project.info
-            self.audio.seq.load('')
-            self.audio.seq.libseq.setTempo(int(info['bpm']))
-            # self.audio.seq.pattern
-            # self.audio.seq.update_tempo()
-            self.audio.seq.get_statistics()
-            self.emit_event('file_loaded')
+        if not success:
+            return
+        info = self.xrns.project.info
+        seq = self.audio.seq
+        seq.load('')
+        seq.libseq.setTempo(int(info['bpm']))
+        seq.file = file
+
+        bank = 1
+        seq.select_bank(bank)
+        sequence_nr = 0
+        for group_nr, group in enumerate(self.xrns.project.get_groups()):
+            for phrase_nr, phrase in enumerate(group.phrases):
+                seq.set_sequence_name(
+                    bank, sequence_nr, f'{group.name} {phrase_nr}')
+                sequence_nr += 1
+
+        # self.audio.seq.update_tempo()
+        self.audio.seq.get_statistics()
+        self.emit_event('file_loaded')
 
     def emit_event(self, event):
         if event in self.events:

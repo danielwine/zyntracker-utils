@@ -7,7 +7,7 @@ from .repl import REPL
 from .commands import menu
 from relive.io.logger import CursesHandler
 from relive.shared.tracker import Note
-from relive.audio.service import AudioManager
+from relive.audio.audio import AudioManager
 from relive.shared.xrns import XRNS
 from relive.cli.messages import MSG_HEADER
 
@@ -100,7 +100,7 @@ class TUIApp(REPL):
         self.win.status2.add_get_data_cb(
             get_audio, '', 'audio_status')
         self.add_data_cb(self.win.status, '', 'statistics')
-        self.add_data_cb(self.win.sequences, '', 'sequences_in_bank')
+        self.add_data_cb(self.win.sequences, '', 'get_props_of_sequences')
         self.add_data_cb(self.win.window2, 'pattern', 'info')
         self.add_data_cb(self.win.pattern, 'pattern', 'notes')
 

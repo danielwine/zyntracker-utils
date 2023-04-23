@@ -10,12 +10,14 @@ basepath = dirname(realpath(__file__))
 logger = logging.getLogger(__name__)
 ui_scale = 2
 
+
 class SnapshotManager:
     def __init__(self):
         self.content = {}
 
     def load_snapshot(self, fpath, load_sequence=True):
-        if load_sequence: logger.debug('Loading ' + fpath)
+        if load_sequence:
+            logger.debug('Loading ' + fpath)
         try:
             with open(fpath, "r") as fh:
                 json = fh.read()
@@ -57,7 +59,7 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
 
     def get_info_all(self):
         return {
-            'sequences': self.list_sequences_in_bank(),
+            'sequences': self.get_props_of_sequences(),
             'pattern_info': self.pattern.info(),
             'pattern': self.pattern.get_notes()
         }
@@ -85,7 +87,8 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         total_patterns = self.libseq.getPatternsInTrack(bnum, snum, tnum)
         while len(patterns) != total_patterns:
             ret = self.libseq.getPattern(bnum, snum, tnum, location)
-            if ret != -1: patterns.append(ret)
+            if ret != -1:
+                patterns.append(ret)
             location += 1
         return patterns
 
@@ -116,12 +119,24 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     def pattern_info(self):
         return self.pattern.info
 
-    @property
-    def sequences_in_bank(self):
+    def get_props_of_sequences(self):
         seqs = {}
+        if not hasattr(self, 'libseq'): return
         for el in range(self.libseq.getSequencesInBank(self.bank)):
-            seqs[el] = self.get_sequence_name(self.bank, el)
+            seqs[el] = self.get_props_of_sequence(el)
         return seqs
+
+    def get_props_of_sequence(self, seq_num):
+        return {
+            'name': self.get_sequence_name(self.bank, seq_num),
+            'group': self.libseq.getGroup(self.bank, int(seq_num)),
+            'trigger': self.libseq.getTriggerNote(self.bank, seq_num)
+        }
+
+    @property
+    def sequence_names(self):
+        return {key: value['name']
+                for key, value in self.get_props_of_sequences().items()}
 
     def select_pattern(self, pattern):
         return self.pattern.select(pattern)
@@ -196,13 +211,14 @@ class PatternManager:
         notes = []
         for step in range(self.libseq.getSteps()):
             isStepEmpty = True
-            for note in range(0,127):
-                vel = self.libseq.getNoteVelocity(step,note)
-                if vel: 
+            for note in range(0, 127):
+                vel = self.libseq.getNoteVelocity(step, note)
+                if vel:
                     notes.append([step, note, vel, self.libseq
-                        .getNoteDuration(step, note)])
+                                  .getNoteDuration(step, note)])
                     isStepEmpty = False
-            if isStepEmpty: notes.append([step])
+            if isStepEmpty:
+                notes.append([step])
         return notes
 
     @notes.setter
