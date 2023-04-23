@@ -8,12 +8,18 @@ data/RIFF
 data/temp
 data/projects
 scripts/_*
+relive/gui/_tmp
+relive/gui/res/
 relive/shared/_x*.py
 *.tmp
 
 # docs
 
 docs/
+
+# settings
+
+*.ini
 
 # builds
 lib/zynseq/build

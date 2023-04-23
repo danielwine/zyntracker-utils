@@ -1,1 +1,1 @@
-python3 -m relive.gui --size=1800x1016 --dpi=93
+python3 -m relive.gui --size=1750x900 --dpi=93

@@ -1,0 +1,36 @@
+#:kivy 2.1
+
+<Menu@TabbedPanel>:
+    Button:
+        text: "Menu"
+
+
+<Test@TabbedPanel>:
+    # size_hint: 1, 1
+    # pos_hint: {'center_x': .5, 'center_y': .5}
+    do_default_tab: False
+    tab_pos: 'bottom_left'
+    size_hint_x: 1.2
+    id: menu
+
+    TabbedPanelItem:
+        size_hint: 1, 1
+        text: 'pads'
+        Pad
+    TabbedPanelItem:
+        size_hint: 1, 1
+        text: 'control'
+        Pad
+    TabbedPanelItem:
+        text: 'sets'
+        BoxLayout:
+            Label:
+                text: 'Second tab content area'
+            Button:
+                text: 'Button that does nothing'
+    TabbedPanelItem:
+        text: 'mixer'
+        Mixer
+    TabbedPanelItem:
+        text: 'settings'
+        on_press: app.open_settings(menu)
