@@ -4,6 +4,7 @@ from os.path import isfile, join, splitext
 from os import listdir, getcwd
 from .commands import pcmds, lcmds
 from relive.audio.utils import is_port, format_port
+from relive.io.process import get_files, get_first_file
 from relive.cli.messages import (
     MSG_HEADER, MSG_USAGE, ERR_INVALID, ERR_MISSING_ARG)
 
@@ -112,28 +113,12 @@ class REPL:
             r = fn(p[0], p[1], p[2], p[3], p[4])
         return r
 
-    def get_files(self, path, ext, starts_with=False):
-        if not path or not ext:
-            return False
-        files = []
-        for f in listdir(path):
-            if isfile(join(path, f)) and splitext(f)[1] == '.' + ext:
-                if starts_with and f.startswith(starts_with) \
-                        or not starts_with:
-                    files.append(f)
-        files.sort()
-        return files
-
-    def get_first_file(self, path, ext, starts_with):
-        files = self.get_files(path, ext, starts_with)
-        return files[0] if files else ''
-
     def load(self, par):
         if not par:
             self.print('Please specify file name.')
             return False
-        zss = self.get_first_file(self.snapshot_path, 'zss', par[0])
-        xrns = self.get_first_file(self.xrns_path, 'xrns', par[0])
+        zss = get_first_file(self.snapshot_path, 'zss', par[0])
+        xrns = get_first_file(self.xrns_path, 'xrns', par[0])
         if zss:
             self.load_zss(zss)
             self.file = zss
@@ -221,8 +206,8 @@ class REPL:
 
     def cmd_dir(self, par):
         """list ZSS files"""
-        self.pprint(self.get_files(self.snapshot_path, 'zss'))
-        self.pprint(self.get_files(self.xrns_path, 'xrns'))
+        self.pprint(get_files(self.snapshot_path, 'zss'))
+        self.pprint(get_files(self.xrns_path, 'xrns'))
 
     def cmd_load(self, par):
         """load ZSS file"""

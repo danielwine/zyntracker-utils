@@ -37,25 +37,28 @@ class TextGrid(GridLayout):
             if text:
                 # Update the text of the selected label
                 self.selected_label.text = text
-            elif keycode[0] == 8:
+            if keycode[0] == 8:
                 # Delete the text of the selected label
                 self.selected_label.text = ""
-            elif key == 'up' and self.selected_row > 0:
+            if key == 'up' and self.selected_row > 0:
                 # Move up one row
                 self.selected_row -= 1
                 self.select_label()
-            elif key == 'down' and  self.selected_row < self.rows - 1:
+            if key == 'down' and self.selected_row < self.rows - 1:
                 # Move down one row
                 self.selected_row += 1
                 self.select_label()
-            elif key == 'right' and self.selected_col > 0:
+            if key == 'right' and self.selected_col > 0:
                 # Move left one column
                 self.selected_col -= 1
                 self.select_label()
-            elif key == 'left' and self.selected_col < self.cols - 1:
+            if key == 'left' and self.selected_col < self.cols - 1:
                 # Move right one column
                 self.selected_col += 1
                 self.select_label()
+            if 'ctrl' in modifiers and text == 'c':
+                app = App.get_running_app()
+                app.exit()
 
     def on_touch_down(self, touch):
         Logger.info('TOUCHDOWN')
@@ -79,4 +82,3 @@ class TextGrid(GridLayout):
         print(index)
         self.selected_label = self.children[index]
         self.selected_label.color = (1, 255, 1, 1)
-

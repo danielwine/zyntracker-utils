@@ -5,7 +5,7 @@ from kivy.uix.slider import Slider
 from kivy.uix.label import Label
 
 
-class Track(BoxLayout):
+class Channel(BoxLayout):
     def __init__(self, **kwargs):
         self.orientation = 'vertical'
         super().__init__(**kwargs)
@@ -19,9 +19,12 @@ class Mixer(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         row = {}
+        track_names = [
+            'drum', 'bass', 'pad', 'lead', '', 'mast'
+        ]
         for slider in range(11):
-            track = Track()
+            channel = Channel()
             # slider = Slider()
             # slider.orientation = 'vertical'
-            self.add_widget(track)
+            self.add_widget(channel)
         self.row = row

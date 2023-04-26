@@ -1,17 +1,21 @@
 #:kivy 2.1
 
-<Status>:
-    height: dp(50)
-    size_hint_x: 0.2
-    size_hint_y: None
-    pos_hint: {'left_x': 0}
+Screen:
 
 <Screen>:
+    id: screen
+    status: status
     orientation: 'vertical'
-    Status
+    Status:
+        id: status
+        height: dp(45)
+        size_hint_x: 0.2
+        size_hint_y: None
+        pos_hint: {'left_x': 0}
     Content
 
 <Content>:
+    id: content
     orientation: 'horizontal'    
     Test
     TextGrid

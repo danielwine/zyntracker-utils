@@ -10,5 +10,5 @@ class Pad(GridLayout):
         self.cols = 5
         super().__init__(**kwargs)
         for pad in range(25):
-            button = Button(text='NEM!')
+            button = Button(text='PAD')
             self.add_widget(button)

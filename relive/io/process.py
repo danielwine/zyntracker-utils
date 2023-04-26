@@ -1,5 +1,5 @@
 import os
-from os.path import dirname, realpath, exists
+from os.path import dirname, realpath, exists,  isfile, join, splitext
 from subprocess import Popen, PIPE
 
 
@@ -34,9 +34,11 @@ class StdOut:
 
 
 def launch_plugin(url, debug):
-    if not debug: stdout.mute()
+    if not debug:
+        stdout.mute()
     proc = Popen(['jalv', url], stdin=PIPE, stdout=PIPE)
-    if not debug: stdout.unmute()
+    if not debug:
+        stdout.unmute()
     return proc
 
 
@@ -92,6 +94,24 @@ def get_context():
             'path_xrns': local_path + '/data/xrns',
             'audio': guess_engine()
         }
+
+
+def get_files(path, ext, starts_with=False):
+    if not path or not ext:
+        return False
+    files = []
+    for f in os.listdir(path):
+        if isfile(join(path, f)) and splitext(f)[1] == '.' + ext:
+            if starts_with and f.startswith(starts_with) \
+                    or not starts_with:
+                files.append(f)
+    files.sort()
+    return files
+
+
+def get_first_file(path, ext, starts_with):
+    files = get_files(path, ext, starts_with)
+    return files[0] if files else ''
 
 
 stdout = StdOut()
