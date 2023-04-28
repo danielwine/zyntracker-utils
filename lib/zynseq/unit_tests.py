@@ -10,9 +10,8 @@ from time import sleep
 import time
 import filecmp
 import binascii
-from zynseq import zynseq
-from os.path import dirname, realpath
-# libseq = ctypes.cdll.LoadLibrary(dirname(realpath(__file__))+"/build/libzynseq.so")
+from zynlibs.zynseq import zynseq
+from zynlibs.zynseq.zynseq import libseq
 
 client = jack.Client("riban")
 midi_in = client.midi_inports.register("midi_in")
@@ -47,7 +46,7 @@ class TestLibZynSeq(unittest.TestCase):
         global libseq
         global zynseq_midi_out
         global zynseq_midi_in
-        libseq = ctypes.CDLL("./build/libzynseq.so")
+        libseq = ctypes.CDLL("/zynthian/zynthian-ui/zynlibs/zynseq/build/libzynseq.so")
         libseq.init(True)
         zynseq_midi_out = client.get_port_by_name('zynthstep:output')
         zynseq_midi_in = client.get_port_by_name('zynthstep:input')
