@@ -9,8 +9,6 @@ pcmds = {
     'sp': 'select_pattern i',
     'pi': 'pattern_info',
     'pp': 'get_notes_in_pattern',
-    'start': 'transport_start',
-    'stop': 'transport_stop',
     'toggle': 'transport_toggle'
 }
 
@@ -22,10 +20,19 @@ lcmds = {
     # Pattern management
     'cp': 'createPattern',
     'gpt': 'getPatternsInTrack i i i',
+    'gp': 'getPattern i i i i',
     'gs': 'getSteps',
+    'sbp': 'setBeatsInPattern i',
+    'ssbp': 'setStepsPerBeat i',
+    'an': 'addNote i i i i',
     # Sequence management
+    'ie': 'isEmpty i i',
     'gsn': 'getSequenceName i i',
     'gts': 'getTracksInSequence i i',
+    'gg': 'getGroup i i',
+    'sg': 'setGroup i i i',
+    'gc': 'getChannel i i i',
+    'sc': 'setChannel i i i i',
     'tps': 'togglePlayState i i',
     # Bank management
     'gsb': 'getSequencesInBank i',
@@ -37,6 +44,7 @@ menu = {
     'F1': 'Terminal',
     'F2': 'Sequences',
     'F3': 'Pattern',
+    'F4': 'Instruments',
     'F9': 'Help',
     'F10': 'Exit'
 }

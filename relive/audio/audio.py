@@ -2,10 +2,21 @@ from time import sleep
 from jack import JackError
 from relive.io.logger import LoggerFactory, format
 import relive.io.process as proc
-from .engines import engines
+from .engines import engines, use_linuxsampler
 from .nodes import *
 from .sequencer import Sequencer
 from relive.config import autorun_jack
+from relive.audio.sampler import LinuxSampler
+from relive.res.presets import default_presets
+from relive.config import PATH_SAMPLES
+
+
+class Instrument:
+    def __init__(self) -> None:
+        ls_chan_info = {}
+
+    def __str__(self) -> str:
+        return f'{self.ls_chan_info}'
 
 
 class AudioBackend():
@@ -17,6 +28,7 @@ class AudioBackend():
     client = None
     first_run = True
     sequencer = None
+    sampler = None
     systemout = JackSystemOutNode('system')
 
     def __init__(self, init_delay=0.1, verbose=False, debug=False):
@@ -58,23 +70,45 @@ class AudioBackend():
         status['audio'] = self.context['audio']
         return status
 
+    def load_samples(self):
+        self.instruments = []
+        for instrument_nr in range(len(default_presets)):
+            engine = 'sfz'
+            font = default_presets[instrument_nr]
+            instrument = Instrument()
+            self.sampler.ls_add_channel(instrument)
+            fpath = f'{PATH_SAMPLES}{engine}/{font}'
+            # logger.info(fpath)
+            self.sampler.ls_set_preset(instrument, 'sfz', fpath)
+            self.instruments.append(instrument)
+            # logger.info(instrument)
+
     def start_engines(self):
         if self.context['zynthian']:
             return
         self.logger.info(format('Initializing engines...'))
-        for engine_id, engine in engines.items():
-            self.engines[engine_id] = JackPluginNode(
-                engine['name'], engine_id, engine['uri'],
-                debug=self.debug)
-            self.engines[engine_id].launch()
+        if not use_linuxsampler:
+            for engine_id, engine in engines.items():
+                self.engines[engine_id] = JackPluginNode(
+                    engine['name'], engine_id, engine['uri'],
+                    debug=self.debug)
+                self.engines[engine_id].launch()
+                sleep(self.delay)
+        else:
+            self.engines[0] = JackSamplerNode(
+                'LinuxSampler', 'linuxsampler')
+            self.engines[0].launch()
             sleep(self.delay)
+            self.sampler = LinuxSampler()
+            sleep(self.delay)
+            self.load_samples()
 
     def stop_engines(self):
         if self.context['zynthian']:
             return
         self.logger.info(format('  stopping engines...'))
         for engine in self.engines.values():
-            # print(engine.name)
+            print(engine.name)
             engine.process.terminate()
 
     def shutdown_client(self):
@@ -142,7 +176,8 @@ class AudioManager(AudioBackend):
             exit()
 
     def start(self):
-        if not self.debug: stdout.mute()
+        if not self.debug:
+            stdout.mute()
         self.seq.initialize(self.context['path_lib'])
         if self.is_jack_running:
             stdout.unmute()

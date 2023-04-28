@@ -1,5 +1,5 @@
 
-engines_available = {
+lv2_engines_available = {
     'zynaddsubfx': {
         'name': 'ZynAddSubFX',
         'uri': 'http://zynaddsubfx.sourceforge.net'
@@ -10,4 +10,6 @@ engines_available = {
     }
 }
 
-engines = {k: v for k, v in engines_available.items() if k == 'zynaddsubfx'}
+engines = {k: v for k, v in lv2_engines_available.items() if k == 'zynaddsubfx'}
+
+use_linuxsampler = True

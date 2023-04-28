@@ -5,8 +5,7 @@ from os import listdir, getcwd
 from .commands import pcmds, lcmds
 from relive.audio.utils import is_port, format_port
 from relive.io.process import get_files, get_first_file
-from relive.cli.messages import (
-    MSG_HEADER, MSG_USAGE, ERR_INVALID, ERR_MISSING_ARG)
+from relive.cli.messages import ERR_INVALID, ERR_MISSING_ARG
 
 
 class REPL:
@@ -65,6 +64,7 @@ class REPL:
         if basic:
             self.mprint(cmds)
             self.mprint(pcmds)
+            self.mprint(lcmds)
             return
         self.pprint(cmds)
         self.pprint(pcmds)
@@ -141,23 +141,8 @@ class REPL:
         success = self.xrns.load(file)
         if not success:
             return
-        info = self.xrns.project.info
-        seq = self.audio.seq
-        seq.load('')
-        seq.libseq.setTempo(int(info['bpm']))
-        seq.file = file
-
-        bank = 1
-        seq.select_bank(bank)
-        sequence_nr = 0
-        for group_nr, group in enumerate(self.xrns.project.get_groups()):
-            for phrase_nr, phrase in enumerate(group.phrases):
-                seq.set_sequence_name(
-                    bank, sequence_nr, f'{group.name} {phrase_nr}')
-                sequence_nr += 1
-
+        self.audio.seq.import_project(file, self.xrns.project)
         # self.audio.seq.update_tempo()
-        self.audio.seq.get_statistics()
         self.emit_event('file_loaded')
 
     def emit_event(self, event):
@@ -228,6 +213,14 @@ class REPL:
     def cmd_info(self, par):
         """print statistics"""
         self.pprint(self.audio.seq.statistics)
+
+    def cmd_start(self, par):
+        """start trasnport"""
+        return self.audio.seq.transport_start('zt')
+
+    def cmd_stop(self, par):
+        """stop trasnport"""
+        return self.audio.seq.transport_stop('zt')
 
     def check_events(self, cmd):
         if cmd == 'sp':

@@ -95,7 +95,7 @@ class TUIApp(REPL):
 
         self.initialize_menu()
         self.win.console.write('>')
-        self.win.sequences.header = 'BANK {.bank}'
+        self.win.sequences.header = 'SCENE {.bank}'
         self.win.window2.header = 'PATTERN {pattern.id}'
         self.win.status2.add_get_data_cb(
             get_audio, '', 'audio_status')
@@ -116,7 +116,7 @@ class TUIApp(REPL):
 
     def print_help(self):
         self.win.messages.print(MSG_HEADER, clr=1)
-        print('Basic commands (press F9 for more):')
+        print('Commands (type help for details):')
         self.show_help(basic=True)
 
     def get_input(self):
@@ -190,6 +190,7 @@ class TUIApp(REPL):
                 #     self.win.messages.print(code)
 
         finally:
+            self.stop()
             self.screen.scr.erase()
             self.screen.scr.refresh()
             messageWindow = None

@@ -83,9 +83,9 @@ class XRNS:
         self.source = XRNSFile()
         self.tree = ET.ElementTree()
         self.global_info = {}
-        self.project = TrackerProject()
 
     def load(self, filename):
+        self.project = TrackerProject()
         self.tree = self.source.load(filename)
         self.root = self.tree.getroot()
         self.get_data()

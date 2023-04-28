@@ -42,6 +42,10 @@ def launch_plugin(url, debug):
     return proc
 
 
+def launch_engine(name):
+    return Popen([name], stdin=PIPE, stdout=PIPE)
+
+
 def _popen_pipe(app, param=''):
     proc = Popen([app, param], stdout=PIPE)
     ret, err = proc.communicate()
@@ -67,7 +71,7 @@ def get_platform():
 
 def guess_engine():
     ret, err = get_process_id('renoise')
-    return 'renoise' if ret else 'zynaddsubfx'
+    return 'renoise' if ret else 'linuxsampler'
 
 
 def get_context():

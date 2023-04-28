@@ -1,7 +1,8 @@
 from abc import abstractmethod
 from jack import Client, JackOpenError
+from relive.io.process import stdout
 from relive.io.logger import LoggerFactory, format
-from relive.io.process import launch_plugin
+from relive.io.process import launch_plugin, launch_engine
 
 logger = LoggerFactory(__name__)
 
@@ -15,6 +16,8 @@ class JackBaseNode:
 
     def launch(self):
         logger.info(format(f'  starting {self.id}'))
+        if not self.debug:
+            stdout.mute()
 
     def plug(self, Node, client):
         self._connect(Node, client.connect)
@@ -55,12 +58,35 @@ class JackSequencerNode(JackBaseNode):
             logger.error("Cannot connect to jack server.")
             return
         # client.midi_inports.register('input')
+        stdout.unmute()
         return self.client
 
     def _connect(self, Node, action):
         for inport in self.inports:
             if isinstance(Node, JackMidiInputNode):
                 action(f'{Node.name}:{Node.outport[0]}',
+                       f'{self.name}:{inport}')
+
+
+class JackSamplerNode(JackBaseNode):
+    def __init__(self, name, id, debug=False) -> None:
+        self.name = name
+        self.id = id
+        super().__init__(
+            name,
+            inports=['midi_in_0'],
+            outports=['0', '1'],
+            debug=debug)
+
+    def launch(self):
+        super().launch()
+        self.process = launch_engine(self.id)
+        stdout.unmute()
+
+    def _connect(self, Node, action):
+        for inport in self.inports:
+            if isinstance(Node, JackSequencerNode):
+                action(f'{Node.name}:{Node.outports[0]}',
                        f'{self.name}:{inport}')
 
 
@@ -80,6 +106,7 @@ class JackPluginNode(JackBaseNode):
     def launch(self):
         super().launch()
         self.process = launch_plugin(self.uri, self.debug)
+        stdout.unmute()
 
     def _connect(self, Node, action):
         for inport in self.inports:
@@ -99,7 +126,8 @@ class JackSystemOutNode(JackBaseNode):
 
     def _connect(self, Node, action):
         for num in range(len(self.inports)):
-            if isinstance(Node, JackPluginNode):
+            if isinstance(Node, JackPluginNode) or \
+                    isinstance(Node, JackSamplerNode):
                 action(f'{Node.name}:{Node.outports[num]}',
                        f'{self.name}:{self.inports[num]}')
             if isinstance(Node, JackSequencerNode):

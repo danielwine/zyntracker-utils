@@ -1,49 +1,14 @@
-import base64
-import time
 import logging
+import time
 from json import JSONDecoder
 from os.path import dirname, realpath
-from relive.shared.tracker import TrackerPattern
+from relive.shared.tracker import TrackerPattern, TrackerProject
+from relive.shared.zss import SnapshotManager
 from lib.zynseq import zynseq
 
 basepath = dirname(realpath(__file__))
 logger = logging.getLogger(__name__)
 ui_scale = 2
-
-
-class SnapshotManager:
-    def __init__(self):
-        self.content = {}
-
-    def load_snapshot(self, fpath, load_sequence=True):
-        if load_sequence:
-            logger.debug('Loading ' + fpath)
-        try:
-            with open(fpath, "r") as fh:
-                json = fh.read()
-                logger.debug(f"Loading snapshot {fpath}")
-                logger.debug(f"=> {json}")
-
-        except Exception as e:
-            logger.error("Can't load snapshot '%s': %s" % (fpath, e))
-            return False
-
-        try:
-            snapshot = JSONDecoder().decode(json)
-            self.content = snapshot
-            if "zynseq_riff_b64" in snapshot:
-                b64_bytes = snapshot["zynseq_riff_b64"].encode("utf-8")
-                binary_riff_data = base64.decodebytes(b64_bytes)
-                if not load_sequence:
-                    return True
-            else:
-                return False
-            self.restore_riff_data(binary_riff_data)
-            return True
-
-        except Exception as e:
-            logger.exception("Invalid snapshot: %s" % e)
-            return False
 
 
 class Sequencer(zynseq.zynseq, SnapshotManager):
@@ -56,6 +21,41 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         super().initialize(path)
         self.pattern = PatternManager(self.libseq)
         self.get_statistics()
+
+    def import_project(self, file_name, tracker_project):
+        self.tracker = tracker_project
+        info = self.tracker.info
+        self.load('')
+        self.libseq.setTempo(int(info['bpm']))
+        self.file = file_name
+
+        bank = 1
+        self.select_bank(bank)
+        self._import_groups(bank)
+        self.get_statistics()
+
+    def _import_groups(self, bank):
+        sequence_nr = 0
+        for group_nr, group in enumerate(self.tracker.get_groups()):
+            for phrase_nr, phrase in enumerate(group.phrases):
+                self.set_sequence_name(
+                    bank, sequence_nr, f'{group.name} {phrase_nr}')
+                sequence_nr += 1
+                notes = phrase.pattern.get_sequencer_stream()
+                pattern_nr = self.libseq.getPattern(bank, sequence_nr, 0, 0)
+                # pattern_nr = self.libseq.createPattern()
+                self.select_pattern(pattern_nr)
+                # print(notes)
+                for step in range(len(notes)):
+                    self.libseq.addNote(*notes[step])
+                self.add_pattern(bank, sequence_nr, 0, 0, pattern_nr)
+                self.libseq.setChannel(bank, sequence_nr, 0, group_nr)
+                self.libseq.setGroup(bank, sequence_nr, group_nr)
+                logger.info(f'{pattern_nr} {group_nr}')
+                # logger.info(self.libseq.getChannel(bank, sequence_nr, 0))
+                # for entry in stream:
+
+                # logger.info(stream)
 
     def get_info_all(self):
         return {
@@ -82,6 +82,7 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                                 self.get_pids_in_track(bnum, snum, tnum))
 
     def get_pids_in_track(self, bnum, snum, tnum):
+        ''' iterates over the track and collects pattern indices '''
         location = 0
         patterns = []
         total_patterns = self.libseq.getPatternsInTrack(bnum, snum, tnum)
@@ -121,7 +122,8 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
 
     def get_props_of_sequences(self):
         seqs = {}
-        if not hasattr(self, 'libseq'): return
+        if not hasattr(self, 'libseq'):
+            return
         for el in range(self.libseq.getSequencesInBank(self.bank)):
             seqs[el] = self.get_props_of_sequence(el)
         return seqs
@@ -193,10 +195,9 @@ class PatternManager:
         return {
             'steps': ls.getSteps(),
             'beats': ls.getBeatsInPattern(),
-            'length': ls. getPatternLength(ls.getPatternIndex()),
-            'cps': ls.getClocksPerStep(),
             'spb': ls.getStepsPerBeat(),
-            'inpch': ls.getInputChannel(),
+            'cps': ls.getClocksPerStep(),
+            'length': ls. getPatternLength(ls.getPatternIndex()),
             'inprest': ls.getInputRest(),
             'scale': ls.getScale(),
             'tonic': ls.getTonic(),
@@ -211,7 +212,7 @@ class PatternManager:
         notes = []
         for step in range(self.libseq.getSteps()):
             isStepEmpty = True
-            for note in range(0, 127):
+            for note in range(0,  127):
                 vel = self.libseq.getNoteVelocity(step, note)
                 if vel:
                     notes.append([step, note, vel, self.libseq
