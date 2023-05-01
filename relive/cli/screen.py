@@ -192,7 +192,8 @@ class MessageWindow(Window):
 
 class DataWindow(Window):
     def __init__(self, vertical=True, hide_empty=False, **kwargs):
-        super().__init__(**kwargs, scrollable=True)
+        scrollable = True if vertical else False
+        super().__init__(**kwargs, scrollable=scrollable)
         self.data = {}
         self.vertical = True if kwargs['height'] > 1 else False
         self.pending = False
@@ -232,6 +233,9 @@ class DataWindow(Window):
             key = f'{key:02}' if type(key) is int \
                 else f'{str(key):9}'
         msg = f' {key}: {str(value)}'
+        if not self.vertical and key == 'file':
+            value = 'untitled' if not value else value
+            msg = f' {str(value)} '
         msg = msg if self.vertical else f' {msg} '
         self.print(
             msg, end='\n' if self.vertical else '')
@@ -255,8 +259,9 @@ class SequenceWindow(DataWindow):
     def render_item(self, item):
         key, value = item
         grp = value['group']
-        if not value['name']: return
-        self.print(f'{key:02}: ', end = '')
+        if not value['name']:
+            return
+        self.print(f'{key:02}: ', end='')
         clr = 20 + grp if grp and grp >= 0 and grp < 5 else 0
         self.print(value['name'], end='\n', clr=clr)
 

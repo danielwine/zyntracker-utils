@@ -91,7 +91,7 @@ def get_context():
             'audio': 'zynmidirouter'
         }
     if exists(local_full_path):
-        return {
+        return { 
             'zynthian': False,
             'path_lib': local_full_path,
             'path_snapshot': local_path + '/data/zss',

@@ -57,7 +57,7 @@ class AudioBackend():
 
     def is_running(self, name):
         if name in self.services:
-            return True if len(self.services[name][0]) > 0 else False
+            return True if self.services[name][0][0] != '' else False
 
     def is_online(self, name):
         return "OK" if self.is_running(name) else "OFF"
@@ -179,6 +179,7 @@ class AudioManager(AudioBackend):
         if not self.debug:
             stdout.mute()
         self.seq.initialize(self.context['path_lib'])
+        logger.info(f'isjack: {self.is_jack_running}')
         if self.is_jack_running:
             stdout.unmute()
             self.start_engines()

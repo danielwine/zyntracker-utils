@@ -160,7 +160,6 @@ class LinuxSampler:
             line = self.sock.recv(4096)
         except Exception as err:
             logging.error("FAILED lscp_send_single(%s): %s" % (command, err))
-            self.stop_loading()
             return None
         line = line.decode()
         # logging.debug("LSCP RECEIVE => %s" % line)

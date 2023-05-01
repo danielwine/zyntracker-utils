@@ -23,9 +23,9 @@ class Note:
         code = int(code)
         if code == -1:
             return cls.OFFNOTE
-        if code < 23:
+        if code < 12:
             return cls.EMPTY
-        code = code - 24
+        code = code
         octave = int(code / 12)
         note = Note.NOTES[code % 12]
         sep = '-' if not note.endswith('#') else ''
@@ -37,7 +37,7 @@ class Note:
             return -1
         octave = note[-1]
         note = note[:-1].strip('-')
-        code = 24 + int(octave) * 12 + Note.NOTES.index(note)
+        code = int(octave) * 12 + Note.NOTES.index(note)
         return code
 
 
@@ -45,7 +45,7 @@ class TrackerPattern:
     def __init__(self, line_number=0, notes=[]) -> None:
         self._notes = {}
         self.line_number = line_number
-        self.duration_measure = 4
+        self.duration_measure = 1
         if line_number > 0 and notes:
             self.add_notes(notes)
             self.calculate_durations()

@@ -198,6 +198,10 @@ class REPL:
         """load ZSS file"""
         self.load(par)
 
+    def cmd_save(self, par):
+        """save ZSS file"""
+        self.audio.seq.save_file()
+
     def cmd_ports(self, par):
         """list available jack ports"""
         self.pprint(self.audio.client.get_ports())
@@ -215,11 +219,11 @@ class REPL:
         self.pprint(self.audio.seq.statistics)
 
     def cmd_start(self, par):
-        """start trasnport"""
+        """start transport"""
         return self.audio.seq.transport_start('zt')
 
     def cmd_stop(self, par):
-        """stop trasnport"""
+        """stop transport"""
         return self.audio.seq.transport_stop('zt')
 
     def check_events(self, cmd):

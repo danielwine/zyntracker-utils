@@ -34,28 +34,28 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self._import_groups(bank)
         self.get_statistics()
 
+    def _expand_pattern(self, phrase):
+        line_nr = phrase.line_nr
+        if self.libseq.getSteps() < line_nr:
+            multiplier = int(line_nr / self.libseq.getSteps())
+            self.libseq.setBeatsInPattern(
+                self.libseq.getBeatsInPattern() * multiplier)
+
     def _import_groups(self, bank):
         sequence_nr = 0
         for group_nr, group in enumerate(self.tracker.get_groups()):
             for phrase_nr, phrase in enumerate(group.phrases):
                 self.set_sequence_name(
                     bank, sequence_nr, f'{group.name} {phrase_nr}')
-                sequence_nr += 1
                 notes = phrase.pattern.get_sequencer_stream()
                 pattern_nr = self.libseq.getPattern(bank, sequence_nr, 0, 0)
-                # pattern_nr = self.libseq.createPattern()
                 self.select_pattern(pattern_nr)
-                # print(notes)
+                self._expand_pattern(phrase)
                 for step in range(len(notes)):
                     self.libseq.addNote(*notes[step])
-                self.add_pattern(bank, sequence_nr, 0, 0, pattern_nr)
                 self.libseq.setChannel(bank, sequence_nr, 0, group_nr)
                 self.libseq.setGroup(bank, sequence_nr, group_nr)
-                logger.info(f'{pattern_nr} {group_nr}')
-                # logger.info(self.libseq.getChannel(bank, sequence_nr, 0))
-                # for entry in stream:
-
-                # logger.info(stream)
+                sequence_nr += 1
 
     def get_info_all(self):
         return {
@@ -106,7 +106,7 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     @property
     def statistics(self):
         return {
-            'file': "none" if not self.file else self.file,
+            'file': None if not self.file else self.file,
             'BPM': self.get_value('bpm', 120.0),
             'BPB': self.get_value('bpb', 4),
             'banks': len(self.get_value('banks', {})),
@@ -161,8 +161,11 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self.filepath = path + "/" + filename
         return self.load_snapshot(self.filepath, **args)
 
-    # def save(self):
-    #     self.libseq.save(bytes(self.filepath, "utf-8"))
+    def save_file(self):
+        if not hasattr(self, 'content'):
+            self.create_snapshot_from_template(self.file)
+        else:
+            self.save_snapshot(self.file)
 
     def start(self):
         pass
@@ -212,7 +215,7 @@ class PatternManager:
         notes = []
         for step in range(self.libseq.getSteps()):
             isStepEmpty = True
-            for note in range(0,  127):
+            for note in range(0, 127):
                 vel = self.libseq.getNoteVelocity(step, note)
                 if vel:
                     notes.append([step, note, vel, self.libseq

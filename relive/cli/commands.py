@@ -29,6 +29,7 @@ lcmds = {
     'ie': 'isEmpty i i',
     'gsn': 'getSequenceName i i',
     'gts': 'getTracksInSequence i i',
+    'ssb': 'setSequencesInBank i i',
     'gg': 'getGroup i i',
     'sg': 'setGroup i i i',
     'gc': 'getChannel i i i',

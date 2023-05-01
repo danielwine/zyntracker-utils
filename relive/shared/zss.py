@@ -1,5 +1,7 @@
 import base64
-from json import JSONDecoder
+from os.path import splitext, exists
+from json import JSONDecoder, JSONEncoder
+from relive.config import PATH_BASE, PATH_DATA
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,4 +39,25 @@ class SnapshotManager:
 
         except Exception as e:
             logger.exception("Invalid snapshot: %s" % e)
+            return False
+
+    def create_snapshot_from_template(self, file_name):
+        self.load_snapshot(PATH_BASE + '/shared/base.zss', load_sequence=False)
+        self.save_snapshot(splitext(file_name)[0])
+
+    def save_snapshot(self, file_name):
+        try:
+            riff_data = self.get_riff_data()
+            self.content["zynseq_riff_b64"] = base64.encodebytes(
+                riff_data).decode("utf-8").replace('\n', '')
+            fpath = PATH_DATA + '/zss/' + file_name + '.zss'
+            if exists(fpath):
+                fpath = splitext(fpath)[0] + '_new.zss'
+
+            with open(fpath, "w") as fh:
+                data = JSONEncoder().encode(self.content)
+                fh.write(data)
+
+        except Exception as e:
+            logger.error("Can't write snapshot '%s': %s" % (file_name, e))
             return False
