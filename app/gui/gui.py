@@ -10,8 +10,8 @@ from kivy.clock import Clock
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty, StringProperty
-from relive.config import isRaspberry
-from relive.audio.audio import AudioManager
+from app.config import isRaspberry
+from app.audio.audio import AudioManager
 from kivy.config import Config
 Config.set('kivy', 'exit_on_escape', '0')
 
@@ -44,11 +44,12 @@ class Screen(BoxLayout):
         print('SCREEN on enter ', self.root.ids)
 
 
-class ReliveApp(App):
+class TrackerApp(App):
     def add_engine(self, audio):
         self.audio = audio
 
     def build(self):
+        self.title = 'ZynTracker'
         Window.bind(on_request_close=self.on_request_close)
         self.scale = 2
         self.use_kivy_settings = False
@@ -123,7 +124,7 @@ class ReliveApp(App):
 
 
 audio = AudioManager(init_delay=0.2, verbose=False)
-app = ReliveApp()
+app = TrackerApp()
 app.add_engine(audio)
 app.run()
 audio.stop()

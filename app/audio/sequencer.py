@@ -2,8 +2,8 @@ import logging
 import time
 from json import JSONDecoder
 from os.path import dirname, realpath
-from relive.shared.tracker import TrackerPattern, TrackerProject
-from relive.shared.zss import SnapshotManager
+from app.shared.tracker import TrackerPattern, TrackerProject
+from app.shared.zss import SnapshotManager
 from lib.zynseq import zynseq
 
 basepath = dirname(realpath(__file__))

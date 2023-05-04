@@ -4,4 +4,4 @@
 sleep 2
 #/home/pi/jack.sh
 cd /home/pi/relive
-/usr/bin/python3 -m relive.gui
+/usr/bin/python3 -m app.gui

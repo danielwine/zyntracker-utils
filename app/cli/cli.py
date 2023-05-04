@@ -1,8 +1,8 @@
 import logging
 from .repl import REPL
-from relive.audio.audio import AudioManager
-from relive.shared.xrns import XRNS
-from relive.cli.messages import MSG_HEADER, MSG_USAGE
+from app.audio.audio import AudioManager
+from app.shared.xrns import XRNS
+from app.cli.messages import MSG_HEADER, MSG_USAGE
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger()

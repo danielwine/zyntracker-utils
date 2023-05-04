@@ -2,8 +2,8 @@ import sys
 import signal
 import io
 import curses
-import relive.config as cfg
-from relive.cli.colors import Col
+import app.config as cfg
+from app.cli.colors import Col
 from .tui import ctrl_c_handler
 
 

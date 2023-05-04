@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd $RELIVE_SRC_FOLDER
+cd $ZT_SRC_FOLDER
 if [ -d "alo" ]; then
 	rm -rf "alo"
 fi

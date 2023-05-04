@@ -1,5 +1,5 @@
-import relive.io.process as proc
-from relive.shared.xrns import XRNS
+import app.io.process as proc
+from app.shared.xrns import XRNS
 from lib.zynseq import zynseq
 
 

@@ -5,11 +5,11 @@ from .screen import Screen, WindowManager
 from .layout import get_layout
 from .repl import REPL
 from .commands import menu
-from relive.io.logger import CursesHandler
-from relive.shared.tracker import Note
-from relive.audio.audio import AudioManager
-from relive.shared.xrns import XRNS
-from relive.cli.messages import MSG_HEADER
+from app.io.logger import CursesHandler
+from app.shared.tracker import Note
+from app.audio.audio import AudioManager
+from app.shared.xrns import XRNS
+from app.cli.messages import MSG_HEADER
 
 messageWindow = None
 ctrl_c_was_pressed = False
@@ -119,19 +119,17 @@ class TUIApp(REPL):
         print('Commands (type help for details):')
         self.show_help(basic=True)
 
-    def get_input(self):
-        self.win.console.print(' ', end='')
-
     def start(self):
         self.audio.initialize()
         self.set_dir(self.audio.context['path_snapshot'],
                      self.audio.context['path_xrns'])
 
         self.win.refresh_all()
+        self.win.console.focus(2)
         self.audio.start()
         self.initialize_renderers()
         self.win.refresh_all()
-        self.get_input()
+        self.win.console.focus(2)
         self.loop()
 
     def loop(self):

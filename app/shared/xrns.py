@@ -2,9 +2,9 @@ from os.path import isfile, isdir, exists, abspath, relpath, join, splitext
 from os import walk, mkdir
 import zipfile
 import xml.etree.ElementTree as ET
-from relive.config import PATH_XRNS, PATH_PROJECTS
-from relive.shared.tracker import Note, TrackerProject
-from relive.res.xrnsdata import PROPS
+from app.config import PATH_XRNS, PATH_PROJECTS
+from app.shared.tracker import Note, TrackerProject
+from app.res.xrnsdata import PROPS
 
 
 class XRNSFile:

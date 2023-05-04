@@ -30,7 +30,7 @@ import shutil
 from time import sleep
 from subprocess import check_output
 from collections import OrderedDict
-from relive.config import PATH_SAMPLES, PATH_SAMPLES_MY
+from app.config import PATH_SAMPLES, PATH_SAMPLES_MY
 
 
 class zyngine_lscp_error(Exception):

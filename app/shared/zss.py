@@ -1,7 +1,7 @@
 import base64
 from os.path import splitext, exists
 from json import JSONDecoder, JSONEncoder
-from relive.config import PATH_BASE, PATH_DATA
+from app.config import PATH_BASE, PATH_DATA
 import logging
 
 logger = logging.getLogger(__name__)

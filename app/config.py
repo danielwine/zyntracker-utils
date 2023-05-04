@@ -1,5 +1,5 @@
 from os.path import dirname, abspath
-from relive.io.process import get_platform
+from app.io.process import get_platform
 
 debug_mode = False
 autorun_jack = False

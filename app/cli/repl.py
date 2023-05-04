@@ -3,9 +3,9 @@ import time
 from os.path import isfile, join, splitext
 from os import listdir, getcwd
 from .commands import pcmds, lcmds
-from relive.audio.utils import is_port, format_port
-from relive.io.process import get_files, get_first_file
-from relive.cli.messages import ERR_INVALID, ERR_MISSING_ARG
+from app.audio.utils import is_port, format_port
+from app.io.process import get_files, get_first_file
+from app.cli.messages import ERR_INVALID, ERR_MISSING_ARG
 
 
 class REPL:

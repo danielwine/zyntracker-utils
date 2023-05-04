@@ -8,9 +8,9 @@ data/RIFF
 data/temp
 data/projects
 scripts/_*
-relive/gui/_tmp
-relive/gui/res/
-relive/shared/_x*.py
+app/gui/_tmp
+app/gui/res/
+app/shared/_tmp/
 *.tmp
 
 # docs

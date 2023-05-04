@@ -1,6 +1,6 @@
 
 import curses
-import relive.cli.colors as CLR
+import app.cli.colors as CLR
 import logging
 import time
 

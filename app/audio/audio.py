@@ -1,14 +1,14 @@
 from time import sleep
 from jack import JackError
-from relive.io.logger import LoggerFactory, format
-import relive.io.process as proc
+from app.io.logger import LoggerFactory, format
+import app.io.process as proc
 from .engines import engines, use_linuxsampler
 from .nodes import *
 from .sequencer import Sequencer
-from relive.config import autorun_jack
-from relive.audio.sampler import LinuxSampler
-from relive.res.presets import default_presets
-from relive.config import PATH_SAMPLES
+from app.config import autorun_jack
+from app.audio.sampler import LinuxSampler
+from app.res.presets import default_presets
+from app.config import PATH_SAMPLES
 
 
 class Instrument:

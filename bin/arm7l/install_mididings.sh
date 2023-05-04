@@ -1,5 +1,5 @@
 
-cd $RELIVE_SRC_FOLDER
+cd $ZT_SRC_FOLDER
 if [ -d "mididings" ]; then
 	rm -rf "mididings"
 fi
@@ -10,4 +10,4 @@ cd mididings
 python3 setup.py build
 sudo python3 setup.py install
 
-rm -rf "$RELIVE_SRC_FOLDER/mididings"
+rm -rf "$ZT_SRC_FOLDER/mididings"
