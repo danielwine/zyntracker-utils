@@ -1,9 +1,9 @@
 {
-  "index": 1,
+  "index": 4,
   "mixer": {
     "chan_00": {
       "level": { "value": 0.800000011920929 },
-      "balance": { "value": -0.019999999999999997 },
+      "balance": { "value": 0.0 },
       "mute": { "value": 0 },
       "solo": { "value": 0 },
       "mono": { "value": 0 },
@@ -167,23 +167,23 @@
       "engine_nick": "LS",
       "engine_jackname": "LinuxSampler",
       "midi_chan": 0,
-      "bank_index": 11,
-      "bank_name": "SFZ/Synths",
+      "bank_index": 2,
+      "bank_name": "SFZ/Drum Machines",
       "bank_info": [
-        "/zynthian/zynthian-data/soundfonts/sfz/Synths",
-        11,
-        "SFZ/Synths",
+        "/zynthian/zynthian-data/soundfonts/sfz/Drum Machines",
+        2,
+        "SFZ/Drum Machines",
         "SFZ",
-        "Synths"
+        "Drum Machines"
       ],
-      "preset_index": 0,
-      "preset_name": "Res",
+      "preset_index": 10,
+      "preset_name": "Roland TR808",
       "preset_info": [
-        "/zynthian/zynthian-data/soundfonts/sfz/Synths/Res.sfz",
-        0,
-        "Res",
+        "/zynthian/zynthian-data/soundfonts/sfz/Drum Machines/Roland TR808.sfz",
+        10,
+        "Roland TR808",
         "sfz",
-        "Res.sfz"
+        "Roland TR808.sfz"
       ],
       "show_fav_presets": false,
       "controllers_dict": {
@@ -193,7 +193,7 @@
           "midi_learn_cc": 1
         },
         "volume": { "value": 96, "midi_learn_chan": 0, "midi_learn_cc": 7 },
-        "pan": { "value": 63, "midi_learn_chan": 0, "midi_learn_cc": 10 },
+        "pan": { "value": 64, "midi_learn_chan": 0, "midi_learn_cc": 10 },
         "expression": {
           "value": 127,
           "midi_learn_chan": 0,
@@ -246,23 +246,23 @@
       "engine_nick": "LS",
       "engine_jackname": "LinuxSampler",
       "midi_chan": 1,
-      "bank_index": 2,
-      "bank_name": "SFZ/Drum Machines",
+      "bank_index": 0,
+      "bank_name": "SFZ/Bass",
       "bank_info": [
-        "/zynthian/zynthian-data/soundfonts/sfz/Drum Machines",
-        2,
-        "SFZ/Drum Machines",
+        "/zynthian/zynthian-data/soundfonts/sfz/Bass",
+        0,
+        "SFZ/Bass",
         "SFZ",
-        "Drum Machines"
+        "Bass"
       ],
-      "preset_index": 10,
-      "preset_name": "Roland TR808",
+      "preset_index": 7,
+      "preset_name": "AnalogBass/analog bass",
       "preset_info": [
-        "/zynthian/zynthian-data/soundfonts/sfz/Drum Machines/Roland TR808.sfz",
-        10,
-        "Roland TR808",
+        "/zynthian/zynthian-data/soundfonts/sfz/Bass/AnalogBass/analog_bass.sfz",
+        7,
+        "AnalogBass/analog bass",
         "sfz",
-        "Roland TR808.sfz"
+        "AnalogBass/analog_bass.sfz"
       ],
       "show_fav_presets": false,
       "controllers_dict": {
@@ -315,6 +315,243 @@
         "env. release": {
           "value": 64,
           "midi_learn_chan": 1,
+          "midi_learn_cc": 72
+        }
+      },
+      "current_screen_index": 0
+    },
+    {
+      "engine_name": "LinuxSampler",
+      "engine_nick": "LS",
+      "engine_jackname": "LinuxSampler",
+      "midi_chan": 2,
+      "bank_index": 11,
+      "bank_name": "SFZ/Synths",
+      "bank_info": [
+        "/zynthian/zynthian-data/soundfonts/sfz/Synths",
+        11,
+        "SFZ/Synths",
+        "SFZ",
+        "Synths"
+      ],
+      "preset_index": 39,
+      "preset_name": "Pad Synth 1",
+      "preset_info": [
+        "/zynthian/zynthian-data/soundfonts/sfz/Synths/Pad Synth 1.sfz",
+        39,
+        "Pad Synth 1",
+        "sfz",
+        "Pad Synth 1.sfz"
+      ],
+      "show_fav_presets": false,
+      "controllers_dict": {
+        "modulation wheel": {
+          "value": 0,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 1
+        },
+        "volume": { "value": 96, "midi_learn_chan": 2, "midi_learn_cc": 7 },
+        "pan": { "value": 64, "midi_learn_chan": 2, "midi_learn_cc": 10 },
+        "expression": {
+          "value": 127,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 11
+        },
+        "sustain": { "value": 0, "midi_learn_chan": 2, "midi_learn_cc": 64 },
+        "sostenuto": { "value": 0, "midi_learn_chan": 2, "midi_learn_cc": 66 },
+        "legato": { "value": 0, "midi_learn_chan": 2, "midi_learn_cc": 68 },
+        "breath": { "value": 127, "midi_learn_chan": 2, "midi_learn_cc": 2 },
+        "portamento on/off": {
+          "value": 0,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 65
+        },
+        "portamento time-coarse": {
+          "value": 0,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 5
+        },
+        "portamento time-fine": {
+          "value": 0,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 37
+        },
+        "filter cutoff": {
+          "value": 64,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 74
+        },
+        "filter resonance": {
+          "value": 64,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 71
+        },
+        "env. attack": {
+          "value": 64,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 73
+        },
+        "env. release": {
+          "value": 64,
+          "midi_learn_chan": 2,
+          "midi_learn_cc": 72
+        }
+      },
+      "current_screen_index": 0
+    },
+    {
+      "engine_name": "LinuxSampler",
+      "engine_nick": "LS",
+      "engine_jackname": "LinuxSampler",
+      "midi_chan": 3,
+      "bank_index": 11,
+      "bank_name": "SFZ/Synths",
+      "bank_info": [
+        "/zynthian/zynthian-data/soundfonts/sfz/Synths",
+        11,
+        "SFZ/Synths",
+        "SFZ",
+        "Synths"
+      ],
+      "preset_index": 40,
+      "preset_name": "Fat Synth",
+      "preset_info": [
+        "/zynthian/zynthian-data/soundfonts/sfz/Synths/Fat Synth.sfz",
+        40,
+        "Fat Synth",
+        "sfz",
+        "Fat Synth.sfz"
+      ],
+      "show_fav_presets": false,
+      "controllers_dict": {
+        "modulation wheel": {
+          "value": 0,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 1
+        },
+        "volume": { "value": 96, "midi_learn_chan": 3, "midi_learn_cc": 7 },
+        "pan": { "value": 64, "midi_learn_chan": 3, "midi_learn_cc": 10 },
+        "expression": {
+          "value": 127,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 11
+        },
+        "sustain": { "value": 0, "midi_learn_chan": 3, "midi_learn_cc": 64 },
+        "sostenuto": { "value": 0, "midi_learn_chan": 3, "midi_learn_cc": 66 },
+        "legato": { "value": 0, "midi_learn_chan": 3, "midi_learn_cc": 68 },
+        "breath": { "value": 127, "midi_learn_chan": 3, "midi_learn_cc": 2 },
+        "portamento on/off": {
+          "value": 0,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 65
+        },
+        "portamento time-coarse": {
+          "value": 0,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 5
+        },
+        "portamento time-fine": {
+          "value": 0,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 37
+        },
+        "filter cutoff": {
+          "value": 64,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 74
+        },
+        "filter resonance": {
+          "value": 64,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 71
+        },
+        "env. attack": {
+          "value": 64,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 73
+        },
+        "env. release": {
+          "value": 64,
+          "midi_learn_chan": 3,
+          "midi_learn_cc": 72
+        }
+      },
+      "current_screen_index": 0
+    },
+    {
+      "engine_name": "LinuxSampler",
+      "engine_nick": "LS",
+      "engine_jackname": "LinuxSampler",
+      "midi_chan": 4,
+      "bank_index": 11,
+      "bank_name": "SFZ/Synths",
+      "bank_info": [
+        "/zynthian/zynthian-data/soundfonts/sfz/Synths",
+        11,
+        "SFZ/Synths",
+        "SFZ",
+        "Synths"
+      ],
+      "preset_index": 134,
+      "preset_name": "Synths/Hard Lead",
+      "preset_info": [
+        "/zynthian/zynthian-data/soundfonts/sfz/Synths/Synths/Hard Lead.sfz",
+        134,
+        "Synths/Hard Lead",
+        "sfz",
+        "Synths/Hard Lead.sfz"
+      ],
+      "show_fav_presets": false,
+      "controllers_dict": {
+        "modulation wheel": {
+          "value": 0,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 1
+        },
+        "volume": { "value": 96, "midi_learn_chan": 4, "midi_learn_cc": 7 },
+        "pan": { "value": 64, "midi_learn_chan": 4, "midi_learn_cc": 10 },
+        "expression": {
+          "value": 127,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 11
+        },
+        "sustain": { "value": 0, "midi_learn_chan": 4, "midi_learn_cc": 64 },
+        "sostenuto": { "value": 0, "midi_learn_chan": 4, "midi_learn_cc": 66 },
+        "legato": { "value": 0, "midi_learn_chan": 4, "midi_learn_cc": 68 },
+        "breath": { "value": 127, "midi_learn_chan": 4, "midi_learn_cc": 2 },
+        "portamento on/off": {
+          "value": 0,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 65
+        },
+        "portamento time-coarse": {
+          "value": 0,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 5
+        },
+        "portamento time-fine": {
+          "value": 0,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 37
+        },
+        "filter cutoff": {
+          "value": 64,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 74
+        },
+        "filter resonance": {
+          "value": 64,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 71
+        },
+        "env. attack": {
+          "value": 64,
+          "midi_learn_chan": 4,
+          "midi_learn_cc": 73
+        },
+        "env. release": {
+          "value": 64,
+          "midi_learn_chan": 4,
           "midi_learn_cc": 72
         }
       },
@@ -655,12 +892,15 @@
   "audio_capture": {
     "audioin-256": ["zynmixer:send_a", "zynmixer:send_b"],
     "LinuxSampler:CH0_": [],
-    "LinuxSampler:CH1_": []
+    "LinuxSampler:CH1_": [],
+    "LinuxSampler:CH2_": [],
+    "LinuxSampler:CH3_": [],
+    "LinuxSampler:CH4_": []
   },
-  "last_snapshot_fpath": null,
+  "last_snapshot_fpath": "/zynthian/zynthian-my-data/snapshots/002/003-testing.zss",
   "audio_recorder_armed": [],
   "version": 1,
-  "extended_config": { "MX": null, "AI": null, "LS": null },
+  "extended_config": { "MX": null, "AP": null, "AI": null, "LS": null },
   "midi_profile_state": {
     "MASTER_BANK_CHANGE_UP": "",
     "SYS_ENABLED": "1",
@@ -686,14 +926,20 @@
     "FILTER_OUTPUT": "0"
   },
   "audio_routing": {
-    "audioin-256": ["zynmixer:return_a", "zynmixer:return_b"],
+    "audioin-256": ["mixer"],
     "LinuxSampler:CH0_": ["mixer"],
-    "LinuxSampler:CH1_": ["mixer"]
+    "LinuxSampler:CH1_": ["mixer"],
+    "LinuxSampler:CH2_": ["mixer"],
+    "LinuxSampler:CH3_": ["mixer"],
+    "LinuxSampler:CH4_": ["mixer"]
   },
   "midi_routing": {
     "audioin-256": ["MIDI-OUT", "NET-OUT"],
-    "LinuxSampler:CH0_": ["MIDI-OUT", "NET-OUT"],
-    "LinuxSampler:CH1_": ["MIDI-OUT", "NET-OUT"]
+    "LinuxSampler:CH0_": [],
+    "LinuxSampler:CH1_": [],
+    "LinuxSampler:CH2_": [],
+    "LinuxSampler:CH3_": [],
+    "LinuxSampler:CH4_": []
   },
   "learned_zs3": [],
   "zynseq_riff_b64": ""

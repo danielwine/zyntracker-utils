@@ -34,13 +34,6 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self._import_groups(bank)
         self.get_statistics()
 
-    def _expand_pattern(self, phrase):
-        line_nr = phrase.line_nr
-        if self.libseq.getSteps() < line_nr:
-            multiplier = int(line_nr / self.libseq.getSteps())
-            self.libseq.setBeatsInPattern(
-                self.libseq.getBeatsInPattern() * multiplier)
-
     def _import_groups(self, bank):
         sequence_nr = 0
         for group_nr, group in enumerate(self.tracker.get_groups()):
@@ -49,10 +42,9 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                     bank, sequence_nr, f'{group.name} {phrase_nr}')
                 notes = phrase.pattern.get_sequencer_stream()
                 pattern_nr = self.libseq.getPattern(bank, sequence_nr, 0, 0)
-                self.select_pattern(pattern_nr)
-                self._expand_pattern(phrase)
-                for step in range(len(notes)):
-                    self.libseq.addNote(*notes[step])
+                self.pattern.select(pattern_nr)
+                self.pattern.expand(phrase.line_nr)
+                self.pattern.notes = notes
                 self.libseq.setChannel(bank, sequence_nr, 0, group_nr)
                 self.libseq.setGroup(bank, sequence_nr, group_nr)
                 sequence_nr += 1
@@ -69,27 +61,32 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self.bpm = ls.getTempo()
         self.bpb = ls.getBeatsPerBar()
         self.banks = {}
-        self.patterns = []
+        self.patterns = {}
         for bnum in range(1, 255):
             seqs = ls.getSequencesInBank(bnum)
-            if seqs:
+            if seqs > 0:
                 self.banks[bnum] = False
                 for snum in range(seqs):
-                    if not ls.isEmpty(bnum, snum):
+                    if ls.getPattern(bnum, snum, 0, 0) >= 0:
                         self.banks[bnum] = True
-                        for tnum in range(ls.getTracksInSequence(snum)):
-                            self.patterns.append(
-                                self.get_pids_in_track(bnum, snum, tnum))
+                        for tnum in range(ls.getTracksInSequence(bnum, snum)):
+                            pids = self.get_pids_in_track(bnum, snum, tnum)
+                            for pid, isEmpty in pids.items():
+                                self.patterns[pid] = isEmpty
 
     def get_pids_in_track(self, bnum, snum, tnum):
         ''' iterates over the track and collects pattern indices '''
         location = 0
-        patterns = []
+        patterns = {}
+        pattern_cnt = 0
         total_patterns = self.libseq.getPatternsInTrack(bnum, snum, tnum)
-        while len(patterns) != total_patterns:
+        while pattern_cnt != total_patterns:
             ret = self.libseq.getPattern(bnum, snum, tnum, location)
-            if ret != -1:
-                patterns.append(ret)
+            if ret != '-1':
+                self.libseq.selectPattern(ret)
+                pattern_cnt += 1
+                patterns[ret] = True if self.libseq.getLastStep() > \
+                    -1 else False
             location += 1
         return patterns
 
@@ -101,7 +98,8 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
 
     @property
     def pattern_count(self):
-        return len([item for sub in self.patterns for item in sub])
+        return len(
+            {key: value for key, value in self.patterns.items() if value})
 
     @property
     def statistics(self):
@@ -150,10 +148,14 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         return self.pattern.notes
 
     def test_midi(self):
-        self.libseq.playNote(62, 110, 0, 200)
-        time.sleep(1)
-        self.libseq.playNote(74, 110, 0, 200)
-        time.sleep(1)
+        for channel in range(3):
+            logger.info(f'Testing channnel {channel}')
+            self.libseq.playNote(62, 110, channel, 200)
+            time.sleep(0.2)
+            self.libseq.playNote(69, 110, channel, 200)
+            time.sleep(0.2)
+            self.libseq.playNote(74, 110, channel, 200)
+            time.sleep(0.4)
 
     def load_file(self, path, filename, **args):
         self.file = filename.split(".")[0]
@@ -227,6 +229,11 @@ class PatternManager:
 
     @notes.setter
     def notes(self, note_list):
-        for note in note_list:
-            print(note)
-            # self.libseq.addNote(note[0], note[1], note[2], note[3])
+        for step in range(len(note_list)):
+            self.libseq.addNote(*note_list[step])
+
+    def expand(self, line_nr):
+        if self.libseq.getSteps() < line_nr:
+            multiplier = int(line_nr / self.libseq.getSteps())
+            self.libseq.setBeatsInPattern(
+                self.libseq.getBeatsInPattern() * multiplier)

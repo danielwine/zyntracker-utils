@@ -81,7 +81,7 @@ PLAY_MODES = ['Disabled', 'Oneshot', 'Loop',
 class zynseq:
     # Initiate library - performed by zynseq module
     def __init__(self):
-        pass
+        self.changing_bank = False
         # self.zctrl_tempo = zynthian_controller(self, 'tempo', None, {
         # 	'is_integer':False,
         # 	'value_min':20.0,
@@ -106,9 +106,9 @@ class zynseq:
         except Exception as e:
             self.libseq = None
             print("Can't initialise zynseq library: %s" % str(e))
-        self.event_cb_list = []  # List of callbacks registered for notification of change
+        self.cb_list = []  # List of callbacks registered for notification of change
         self.bank = None
-        self.select_bank(1)
+        self.select_bank(1, True)
 
     # Destroy instance of shared library
     def destroy(self):
@@ -120,21 +120,21 @@ class zynseq:
     # cb: Callback function
 
     def add_event_cb(self, cb):
-        if cb not in self.event_cb_list:
-            self.event_cb_list.append(cb)
+        if cb not in self.cb_list:
+            self.cb_list.append(cb)
 
     # Function to remove a view to send events to
     # cb: Callback function
 
     def remove_event_cb(self, cb):
-        if cb in self.event_cb_list:
-            self.event_cb_list.remove(cb)
+        if cb in self.cb_list:
+            self.cb_list.remove(cb)
 
     # Function to send notification event to registered callback clients
     # event: Event number
 
     def send_event(self, event):
-        for cb in self.event_cb_list:
+        for cb in self.cb_list:
             try:
                 cb(event)
             except Exception as e:
@@ -142,14 +142,21 @@ class zynseq:
 
     # Function to select a bank for edit / control
     # bank: Index of bank
+    # force: True to fore bank selection even if same as current bank
 
-    def select_bank(self, bank=None):
-        if isinstance(bank, int):
-            if bank < 1 or bank > 64 or bank == self.bank:
+    def select_bank(self, bank=None, force=False):
+        if self.changing_bank:
+            return
+        if bank is None:
+            bank = self.bank
+        else:
+            if bank < 1 or bank > 64 or bank == self.bank and not force:
                 return
-            self.bank = bank
-        if self.libseq.getSequencesInBank(self.bank) == 0:
-            self.build_default_bank(self.bank)
+        self.changing_bank = True
+        if self.libseq.getSequencesInBank(bank) == 0:
+            self.build_default_bank(bank)
+        self.bank = bank
+        self.changing_bank = False
         self.send_event(SEQ_EVENT_BANK)
 
     # Build a default bank 1 with 16 sequences in grid of midi channels 1,2,3,10
@@ -169,7 +176,6 @@ class zynseq:
                         self.libseq.getPatternAt(bank, seq, 0, 0)))
                     self.libseq.setGroup(bank, seq, channel)
                     self.libseq.setChannel(bank, seq, 0, channel)
-            self.send_event(SEQ_EVENT_BANK)
 
     # Function to add / remove sequences to change bank size
     # new_columns: Quanityt of columns (and rows) of new grid
@@ -213,6 +219,7 @@ class zynseq:
             # Lose excess columns
             self.libseq.setSequencesInBank(
                 self.bank, new_columns * old_columns)
+
             # Lose exess rows
             for col in range(new_columns - 1, -1, -1):
                 for row in range(old_columns - 1, new_columns - 1, -1):
@@ -225,8 +232,7 @@ class zynseq:
 
     def load(self, filename):
         self.libseq.load(bytes(filename, "utf-8"))
-        if self.libseq.getSequencesInBank(1) == 0:
-            self.build_default_bank(1)
+        self.select_bank(1, True)  # TODO: Store selected bank in seq file
         self.send_event(SEQ_EVENT_LOAD)
 
     # Save a zynseq file
