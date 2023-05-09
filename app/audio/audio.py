@@ -1,7 +1,7 @@
 from time import sleep
 from jack import JackError
 from app.io.logger import LoggerFactory, format
-import app.io.process as proc
+import app.io.os as proc
 from .engines import engines, use_linuxsampler
 from .nodes import *
 from .sequencer import Sequencer

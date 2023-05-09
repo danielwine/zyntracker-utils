@@ -11,6 +11,7 @@ scripts/_*
 app/gui/_tmp
 app/gui/res/
 app/shared/_tmp/
+app/res/_tmp/
 *.tmp
 
 # docs

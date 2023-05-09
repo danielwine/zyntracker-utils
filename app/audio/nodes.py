@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from jack import Client, JackOpenError
-from app.io.process import stdout
 from app.io.logger import LoggerFactory, format
-from app.io.process import launch_plugin, launch_engine
+from app.io.os import stdout, launch_plugin, launch_engine
 
 logger = LoggerFactory(__name__)
 

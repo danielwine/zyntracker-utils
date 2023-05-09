@@ -123,7 +123,7 @@ class Window:
 
     def draw_separator(self):
         if self.separator:
-            self.print('_' * (self.width - 1), y=self.height - 2, end='')
+            self.print('_' * (self.width), y=self.height - 2, end='')
 
     def parse_header(self):
         if '{' in self.header:
@@ -182,6 +182,7 @@ class Window:
         elif end == '\n':
             self.active_line += 1
             self.active_row = 0
+            self.win.move(self.active_line-1, 0)
         self.win.refresh()
 
 

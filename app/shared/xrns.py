@@ -117,11 +117,12 @@ class XRNS:
                 cnotes.append(None)
                 return
             else:
-                note.midi = Note.get_midi(
-                    notecolumn.find('Note').text)
-                vel = notecolumn.find('Volume')
-                note.velocity = int(vel.text) if vel is not None else 80
-                cnotes.append(note)
+                noteItem = notecolumn.find('Note')
+                if noteItem is not None:
+                    note.midi = Note.get_midi(noteItem.text)
+                    vel = notecolumn.find('Volume')
+                    note.velocity = int(vel.text) if vel is not None else 80
+                    cnotes.append(note)
 
         try:
             notes = {}
@@ -169,19 +170,3 @@ class XRNS:
                             self.parse_phrase_generator(instrument)
                     })
         return phrases
-
-
-if __name__ == '__main__':
-    xrns = XRNS()
-    xrns.load('test.xrns')
-    print()
-    print(xrns.project.info)
-
-    for item in xrns.project.get_group(0).phrases:
-        for key, note in item.notes.items():
-            print(key, note)
-        print(item.notes)
-        print('Stream:')
-        stream = item.pattern.get_sequencer_stream()
-        for item in stream:
-            print(item)

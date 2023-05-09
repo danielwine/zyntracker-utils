@@ -46,10 +46,13 @@ class SnapshotManager:
         self.save_snapshot(splitext(file_name)[0])
 
     def save_snapshot(self, file_name):
+        self.libseq.setVerticalZoom(16)
         try:
             riff_data = self.get_riff_data()
             self.content["zynseq_riff_b64"] = base64.encodebytes(
                 riff_data).decode("utf-8").replace('\n', '')
+            if file_name.endswith('.xrns'):
+                file_name = file_name[:-5]
             fpath = PATH_DATA + '/zss/' + file_name + '.zss'
             if exists(fpath):
                 fpath = splitext(fpath)[0] + '_new.zss'

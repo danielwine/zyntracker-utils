@@ -1,13 +1,13 @@
-import logging
 import time
-from json import JSONDecoder
+from app.io.logger import LoggerFactory
+from math import sqrt
 from os.path import dirname, realpath
-from app.shared.tracker import TrackerPattern, TrackerProject
+from app.shared.tracker import TrackerPattern
 from app.shared.zss import SnapshotManager
 from lib.zynseq import zynseq
 
 basepath = dirname(realpath(__file__))
-logger = logging.getLogger(__name__)
+logger = LoggerFactory(__name__)
 ui_scale = 2
 
 
@@ -17,10 +17,11 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self.filepath = ""
         self.file = ""
 
-    def initialize(self, path):
+    def initialize(self, path, scan=True):
         super().initialize(path)
         self.pattern = PatternManager(self.libseq)
-        self.get_statistics()
+        if scan:
+            self.get_statistics()
 
     def import_project(self, file_name, tracker_project):
         self.tracker = tracker_project
@@ -34,8 +35,19 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self._import_groups(bank)
         self.get_statistics()
 
+    def _expand_bank(self, bank):
+        sequences = len([phrase for group in self.tracker.get_groups()
+                         for phrase in group.phrases])
+        current_sequences = self.libseq.getSequencesInBank(bank)
+        sqrts = sqrt(sequences)
+        if int(sqrts) != sqrts and sequences > current_sequences:
+            new_sequences = (int(sqrts) + 1) * (int(sqrts) + 1)
+            print(new_sequences)
+            self.libseq.setSequencesInBank(bank, new_sequences)
+
     def _import_groups(self, bank):
         sequence_nr = 0
+        self._expand_bank(bank)   
         for group_nr, group in enumerate(self.tracker.get_groups()):
             for phrase_nr, phrase in enumerate(group.phrases):
                 self.set_sequence_name(
@@ -147,9 +159,9 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
     def get_notes_in_pattern(self):
         return self.pattern.notes
 
-    def test_midi(self):
+    def test_midi(self, print_fn=print):
         for channel in range(3):
-            logger.info(f'Testing channnel {channel}')
+            print_fn(f'Testing channnel {channel}')
             self.libseq.playNote(62, 110, channel, 200)
             time.sleep(0.2)
             self.libseq.playNote(69, 110, channel, 200)

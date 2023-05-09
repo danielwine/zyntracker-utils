@@ -4,7 +4,7 @@ from os.path import isfile, join, splitext
 from os import listdir, getcwd
 from .commands import pcmds, lcmds
 from app.audio.utils import is_port, format_port
-from app.io.process import get_files, get_first_file
+from app.io.os import get_files, get_first_file
 from app.cli.messages import ERR_INVALID, ERR_MISSING_ARG
 
 
@@ -96,7 +96,7 @@ class REPL:
             self.print('f{ERR_MISSING_ARG}: {arg}')
             return False
         p = self.convert_params(p, specs)
-        if not p:
+        if p == None or p == False:
             return False
         lp = len(p)
         if lp == 0:
@@ -188,6 +188,10 @@ class REPL:
                 self.pprint(ret)
             else:
                 self.print(ret)
+
+    def cmd_test(self, par):
+        """plays midi notes to test audio channels"""
+        self.audio.seq.test_midi(self.print)
 
     def cmd_dir(self, par):
         """list ZSS files"""

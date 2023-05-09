@@ -1,6 +1,5 @@
 
 pcmds = {
-    'test': 'test_midi',
     'lb': 'list_banks',
     'ls': 'sequence_names',
     'lsp': 'get_props_of_sequence i',
@@ -17,6 +16,8 @@ lcmds = {
     'ed': 'enableDebug b',
     # Direct MIDI interface
     'pn': 'playNote i i i i',
+    'gtc': 'getTriggerChannel',
+    'gtn': 'getTriggerNote i i',
     # Pattern management
     'cp': 'createPattern',
     'gpt': 'getPatternsInTrack i i i',

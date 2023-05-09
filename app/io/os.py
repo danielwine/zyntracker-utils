@@ -1,5 +1,6 @@
 import os
 from os.path import dirname, realpath, exists,  isfile, join, splitext
+from app.config import PATH_XRNS, PATH_ZSS
 from subprocess import Popen, PIPE
 
 
@@ -91,11 +92,11 @@ def get_context():
             'audio': 'zynmidirouter'
         }
     if exists(local_full_path):
-        return { 
+        return {
             'zynthian': False,
             'path_lib': local_full_path,
-            'path_snapshot': local_path + '/data/zss',
-            'path_xrns': local_path + '/data/xrns',
+            'path_snapshot': PATH_ZSS,
+            'path_xrns': PATH_XRNS,
             'audio': guess_engine()
         }
 
@@ -119,3 +120,5 @@ def get_first_file(path, ext, starts_with):
 
 
 stdout = StdOut()
+platform, _ = get_platform()
+isRaspberry = True if platform == 'armv7l' else False

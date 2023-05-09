@@ -133,7 +133,6 @@ class TUIApp(REPL):
         self.loop()
 
     def loop(self):
-        self.win.console.win.nodelay(True)
         self.win.console.win.keypad(1)
         try:
             while True:

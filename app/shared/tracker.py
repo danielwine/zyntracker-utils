@@ -55,7 +55,6 @@ class TrackerPattern:
 
     def add_notes(self, notes):
         self._notes = {}
-        print(notes)
         polyphony = self.get_polyphony_level(notes)
         for step in range(self.line_number):
             self._notes[step] = [None] * polyphony

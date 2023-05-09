@@ -10,7 +10,7 @@ from kivy.clock import Clock
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty, StringProperty
-from app.config import isRaspberry
+from app.io.os import isRaspberry
 from app.audio.audio import AudioManager
 from kivy.config import Config
 Config.set('kivy', 'exit_on_escape', '0')
