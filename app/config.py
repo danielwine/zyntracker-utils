@@ -11,3 +11,7 @@ PATH_PROJECTS = PATH_DATA + '/projects'
 
 PATH_SAMPLES = '/zynthian/zynthian-data/soundfonts/'
 PATH_SAMPLES_MY = '/zynthian/zynthian-my-data/soundfonts/'
+
+SFTP_HOST = "zynthian.local"
+SFTP_USER = "root"
+SFTP_PASSWORD = "raspberry"

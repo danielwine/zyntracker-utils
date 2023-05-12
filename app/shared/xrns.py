@@ -2,6 +2,7 @@ from os.path import isfile, isdir, exists, abspath, relpath, join, splitext
 from os import walk, mkdir
 import zipfile
 import xml.etree.ElementTree as ET
+from app.io.os import trim_extension
 from app.config import PATH_XRNS, PATH_PROJECTS
 from app.shared.tracker import Note, TrackerProject
 from app.res.xrnsdata import PROPS
@@ -16,9 +17,14 @@ class XRNSFile:
         self.project_path = ''
         self.sample_paths = []
 
-    def load(self, file_name):
-        self.source_path = PATH_XRNS + '/' + file_name
-        self.project_path = PATH_PROJECTS + '/' + splitext(file_name)[0]
+    def get_path(self, file_name, standard_path=True):
+        self.source_path = PATH_XRNS + '/' + \
+            file_name if standard_path else file_name
+        self.project_name = splitext(file_name)[0].split('/')[-1]
+        self.project_path = PATH_PROJECTS + '/' + self.project_name
+
+    def load(self, file_name, standard_path=True):
+        self.get_path(file_name, standard_path)
         if not exists(self.project_path):
             mkdir(self.project_path)
         full_name = self.source_path
@@ -84,14 +90,17 @@ class XRNS:
         self.tree = ET.ElementTree()
         self.global_info = {}
 
-    def load(self, filename):
+    def load(self, filename, standard_path=True):
         self.project = TrackerProject()
-        self.tree = self.source.load(filename)
+        self.tree = self.source.load(filename, standard_path)
         self.root = self.tree.getroot()
         self.get_data()
         if self.tree is None:
             return False
         return True
+
+    def get_original_path(self):
+        return trim_extension(self.source.source_path)
 
     def get_data(self):
         try:

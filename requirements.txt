@@ -1,3 +1,6 @@
 JACK-Client==0.5.4
 Kivy==2.1.0
 oscpy==0.6.0
+
+# for converter utility:
+pysftp

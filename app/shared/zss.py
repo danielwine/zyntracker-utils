@@ -11,17 +11,16 @@ class SnapshotManager:
     def __init__(self):
         self.content = {}
 
-    def load_snapshot(self, fpath, load_sequence=True):
-        if load_sequence:
-            logger.debug('Loading ' + fpath)
+    def load_snapshot(self, file_path, load_sequence=True):
+        self.fpath = file_path
         try:
-            with open(fpath, "r") as fh:
+            with open(file_path, "r") as fh:
                 json = fh.read()
-                logger.debug(f"Loading snapshot {fpath}")
+                logger.debug(f"Loading snapshot {file_path}")
                 logger.debug(f"=> {json}")
 
         except Exception as e:
-            logger.error("Can't load snapshot '%s': %s" % (fpath, e))
+            logger.error("Can't load snapshot '%s': %s" % (file_path, e))
             return False
 
         try:
@@ -41,26 +40,26 @@ class SnapshotManager:
             logger.exception("Invalid snapshot: %s" % e)
             return False
 
-    def create_snapshot_from_template(self, file_name):
+    def create_snapshot_from_template(self, file_path=None):
         self.load_snapshot(PATH_BASE + '/shared/base.zss', load_sequence=False)
-        self.save_snapshot(splitext(file_name)[0])
+        self.save_snapshot(file_path)
 
-    def save_snapshot(self, file_name):
-        self.libseq.setVerticalZoom(16)
+    def get_standard_path(file_name):
+        return PATH_DATA + '/zss/' + file_name
+
+    def save_snapshot(self, file_path=None):
+        file_path = self.fpath if file_path is None else file_path
         try:
             riff_data = self.get_riff_data()
             self.content["zynseq_riff_b64"] = base64.encodebytes(
                 riff_data).decode("utf-8").replace('\n', '')
-            if file_name.endswith('.xrns'):
-                file_name = file_name[:-5]
-            fpath = PATH_DATA + '/zss/' + file_name + '.zss'
-            if exists(fpath):
-                fpath = splitext(fpath)[0] + '_new.zss'
+            if exists(file_path):
+                file_path = splitext(file_path)[0] + '_new.zss'
 
-            with open(fpath, "w") as fh:
+            with open(file_path, "w") as fh:
                 data = JSONEncoder().encode(self.content)
                 fh.write(data)
 
         except Exception as e:
-            logger.error("Can't write snapshot '%s': %s" % (file_name, e))
+            logger.error("Can't write snapshot '%s': %s" % (file_path, e))
             return False

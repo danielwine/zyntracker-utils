@@ -1,6 +1,6 @@
 import os
 from os.path import dirname, realpath, exists,  isfile, join, splitext
-from app.config import PATH_XRNS, PATH_ZSS
+from app.config import PATH_DATA, PATH_XRNS, PATH_ZSS
 from subprocess import Popen, PIPE
 
 
@@ -117,6 +117,13 @@ def get_files(path, ext, starts_with=False):
 def get_first_file(path, ext, starts_with):
     files = get_files(path, ext, starts_with)
     return files[0] if files else ''
+
+
+def trim_extension(file_name):
+    for ext in ['.xrns', '.zss']:
+        if file_name.endswith(ext):
+            file_name = file_name[:0-len(ext)]
+    return file_name
 
 
 stdout = StdOut()

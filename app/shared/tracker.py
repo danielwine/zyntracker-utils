@@ -161,3 +161,7 @@ class TrackerProject:
 
     def get_group(self, number):
         return self._groups[number]
+
+    def get_total_phrases(self):
+        return len([phrase for group in self._groups
+                    for phrase in group.phrases])

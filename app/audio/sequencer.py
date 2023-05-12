@@ -1,14 +1,17 @@
 import time
-from app.io.logger import LoggerFactory
 from math import sqrt
 from os.path import dirname, realpath
-from app.shared.tracker import TrackerPattern
+from app.config import PATH_ZSS
+from app.io.os import trim_extension
+from app.io.logger import LoggerFactory
+from app.shared.tracker import Note, TrackerPattern
 from app.shared.zss import SnapshotManager
 from lib.zynseq import zynseq
 
 basepath = dirname(realpath(__file__))
 logger = LoggerFactory(__name__)
 ui_scale = 2
+auto_bank = 10
 
 
 class Sequencer(zynseq.zynseq, SnapshotManager):
@@ -37,29 +40,46 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
 
     def _expand_bank(self, bank):
         sequences = len([phrase for group in self.tracker.get_groups()
-                         for phrase in group.phrases])
+                         for phrase in group.phrases if
+                         not group.name.startswith('*')])
         current_sequences = self.libseq.getSequencesInBank(bank)
         sqrts = sqrt(sequences)
+        print(sequences)
         if int(sqrts) != sqrts and sequences > current_sequences:
             new_sequences = (int(sqrts) + 1) * (int(sqrts) + 1)
             print(new_sequences)
             self.libseq.setSequencesInBank(bank, new_sequences)
 
+    def _import_sequence(
+            self, bank, sequence, name, channel, phrase_obj, transpose):
+        self.set_sequence_name(bank, sequence, name)
+        notes = phrase_obj.pattern.get_sequencer_stream()
+        pattern_nr = self.libseq.getPattern(bank, sequence, 0, 0)
+        self.pattern.select(pattern_nr)
+        self.pattern.expand(phrase_obj.line_nr)
+        self.pattern.add_notes(notes, transpose)
+        self.libseq.setChannel(bank, sequence, 0, channel)
+        self.libseq.setGroup(bank, sequence, channel)
+        if transpose:
+            self.libseq.setTriggerNote(bank, sequence, 24 + sequence)
+
     def _import_groups(self, bank):
         sequence_nr = 0
-        self._expand_bank(bank)   
+        self._expand_bank(bank)
         for group_nr, group in enumerate(self.tracker.get_groups()):
-            for phrase_nr, phrase in enumerate(group.phrases):
-                self.set_sequence_name(
-                    bank, sequence_nr, f'{group.name} {phrase_nr}')
-                notes = phrase.pattern.get_sequencer_stream()
-                pattern_nr = self.libseq.getPattern(bank, sequence_nr, 0, 0)
-                self.pattern.select(pattern_nr)
-                self.pattern.expand(phrase.line_nr)
-                self.pattern.notes = notes
-                self.libseq.setChannel(bank, sequence_nr, 0, group_nr)
-                self.libseq.setGroup(bank, sequence_nr, group_nr)
-                sequence_nr += 1
+            if group.name.startswith('*'):
+                self.libseq.setTriggerChannel(15)
+                for phrase_nr in range(12):
+                    name = f'{group.name} {Note.get_string(24 + phrase_nr)}'
+                    self._import_sequence(
+                        auto_bank, phrase_nr, name, group_nr,
+                        group.phrases[0], phrase_nr)
+            else:
+                for phrase_nr, phrase in enumerate(group.phrases):
+                    name = f'{group.name} {phrase_nr}'
+                    self._import_sequence(
+                        bank, sequence_nr, name, group_nr, phrase, 0)
+                    sequence_nr += 1
 
     def get_info_all(self):
         return {
@@ -175,11 +195,14 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self.filepath = path + "/" + filename
         return self.load_snapshot(self.filepath, **args)
 
-    def save_file(self):
+    def save_file(self, file_path=None):
+        file_path = self.filepath if file_path is None else file_path
+        if file_path == '':
+            file_path = f'{PATH_ZSS}/{trim_extension(self.file)}.zss'
         if not hasattr(self, 'content'):
-            self.create_snapshot_from_template(self.file)
+            self.create_snapshot_from_template(file_path)
         else:
-            self.save_snapshot(self.file)
+            self.save_snapshot(file_path=file_path)
 
     def start(self):
         pass
@@ -194,6 +217,7 @@ class PatternManager:
         super().__init__()
         self.libseq = libseq
         self.id = 0
+        self.tonic = 0
 
     def select(self, pattern):
         pattern = int(pattern)
@@ -241,11 +265,24 @@ class PatternManager:
 
     @notes.setter
     def notes(self, note_list):
-        for step in range(len(note_list)):
-            self.libseq.addNote(*note_list[step])
+        self.add_notes(note_list, transpose=0)
+
+    def add_notes(self, note_list, transpose):
+        for index in range(len(note_list)):
+            if transpose == 0:
+                self.libseq.addNote(*note_list[index])
+            else:
+                note = note_list[index]
+                shift = self.get_shift_value(note[1], transpose, self.tonic)
+                self.libseq.addNote(
+                    note[0], note[1] + shift, note[2], note[3])
 
     def expand(self, line_nr):
         if self.libseq.getSteps() < line_nr:
             multiplier = int(line_nr / self.libseq.getSteps())
             self.libseq.setBeatsInPattern(
                 self.libseq.getBeatsInPattern() * multiplier)
+
+    def get_shift_value(self, midi_note, transpose, tonic):
+        # TODO: the smart transpose functionality has yet to be implemented.
+        return transpose
