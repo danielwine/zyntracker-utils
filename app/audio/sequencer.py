@@ -1,7 +1,8 @@
 import time
 from math import sqrt
 from os.path import dirname, realpath
-from app.config import PATH_ZSS
+from app.config import (
+    auto_bank, trigger_channel, trigger_start_note, PATH_ZSS)
 from app.io.os import trim_extension
 from app.io.logger import LoggerFactory
 from app.shared.tracker import Note, TrackerPattern
@@ -10,8 +11,6 @@ from lib.zynseq import zynseq
 
 basepath = dirname(realpath(__file__))
 logger = LoggerFactory(__name__)
-ui_scale = 2
-auto_bank = 10
 
 
 class Sequencer(zynseq.zynseq, SnapshotManager):
@@ -61,16 +60,18 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self.libseq.setChannel(bank, sequence, 0, channel)
         self.libseq.setGroup(bank, sequence, channel)
         if transpose:
-            self.libseq.setTriggerNote(bank, sequence, 24 + sequence)
+            self.libseq.setTriggerNote(
+                bank, sequence, trigger_start_note + sequence)
 
     def _import_groups(self, bank):
         sequence_nr = 0
         self._expand_bank(bank)
         for group_nr, group in enumerate(self.tracker.get_groups()):
             if group.name.startswith('*'):
-                self.libseq.setTriggerChannel(15)
-                for phrase_nr in range(12):
-                    name = f'{group.name} {Note.get_string(24 + phrase_nr)}'
+                self.libseq.setTriggerChannel(trigger_channel)
+                for phrase_nr in range(16):
+                    note = trigger_start_note + int(phrase_nr)
+                    name = f'{group.name} {Note.get_string(note)}'
                     self._import_sequence(
                         auto_bank, phrase_nr, name, group_nr,
                         group.phrases[0], phrase_nr)
@@ -199,7 +200,7 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         file_path = self.filepath if file_path is None else file_path
         if file_path == '':
             file_path = f'{PATH_ZSS}/{trim_extension(self.file)}.zss'
-        if not hasattr(self, 'content'):
+        if not hasattr(self, 'snapshot'):
             self.create_snapshot_from_template(file_path)
         else:
             self.save_snapshot(file_path=file_path)

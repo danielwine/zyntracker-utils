@@ -1,7 +1,8 @@
+import shutil
 import base64
 from os.path import splitext, exists
 from json import JSONDecoder, JSONEncoder
-from app.config import PATH_BASE, PATH_DATA
+from app.config import create_backup, PATH_BASE, PATH_DATA
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class SnapshotManager:
     def __init__(self):
-        self.content = {}
+        self.snapshot = {}
 
     def load_snapshot(self, file_path, load_sequence=True):
         self.fpath = file_path
@@ -25,7 +26,7 @@ class SnapshotManager:
 
         try:
             snapshot = JSONDecoder().decode(json)
-            self.content = snapshot
+            self.snapshot = snapshot
             if "zynseq_riff_b64" in snapshot:
                 b64_bytes = snapshot["zynseq_riff_b64"].encode("utf-8")
                 binary_riff_data = base64.decodebytes(b64_bytes)
@@ -49,15 +50,15 @@ class SnapshotManager:
 
     def save_snapshot(self, file_path=None):
         file_path = self.fpath if file_path is None else file_path
+        if exists(file_path) and create_backup:
+            shutil.copy2(file_path, splitext(file_path)[0] + '.bak')
         try:
             riff_data = self.get_riff_data()
-            self.content["zynseq_riff_b64"] = base64.encodebytes(
+            self.snapshot["zynseq_riff_b64"] = base64.encodebytes(
                 riff_data).decode("utf-8").replace('\n', '')
-            if exists(file_path):
-                file_path = splitext(file_path)[0] + '_new.zss'
 
             with open(file_path, "w") as fh:
-                data = JSONEncoder().encode(self.content)
+                data = JSONEncoder().encode(self.snapshot)
                 fh.write(data)
 
         except Exception as e:

@@ -165,3 +165,7 @@ class TrackerProject:
     def get_total_phrases(self):
         return len([phrase for group in self._groups
                     for phrase in group.phrases])
+
+    def get_transposable_phrases(self):
+        return len([group for group in self._groups
+                    if group.name.startswith('*')])
