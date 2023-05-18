@@ -5,12 +5,12 @@ from os.path import dirname, abspath
 debug_mode = False
 autorun_jack = False
 
-# Sequencer (importer) settings
+# Sequencer (bridge) settings
 
-create_backup = True
-auto_bank = 10
-trigger_channel = 15
-trigger_start_note = 24
+create_backup = True       # whether to make a local backup of a zss
+auto_bank = 10             # destination bank of auto transposed phrases
+trigger_channel = 15       # global trigger channel for sequences
+trigger_start_note = 24    # start note for auto transposed sequences
 
 # Paths
 
@@ -23,6 +23,8 @@ PATH_PROJECTS = PATH_DATA + '/projects'
 PATH_ZSS_REMOTE = '/zynthian/zynthian-my-data/snapshots/'
 PATH_SAMPLES = '/zynthian/zynthian-data/soundfonts/'
 PATH_SAMPLES_MY = '/zynthian/zynthian-my-data/soundfonts/'
+
+# Zynthian configuration
 
 SFTP_HOST = "zynthian.local"
 SFTP_USER = "root"

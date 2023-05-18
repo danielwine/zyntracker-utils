@@ -7,7 +7,7 @@ data/xrns
 data/RIFF
 data/temp
 data/projects
-scripts/_*
+scripts/
 app/gui/_tmp
 app/gui/res/
 app/shared/_tmp/

@@ -9,15 +9,16 @@ A standalone editor with graphical user interface _might_ be based on the Kivy U
 
 ## Renoise bridge
 
-### Compile zynseq library on your linux system
+### Installation
 
-`./lib/zynseq/build.sh`
+Run the install script
 
-### Install Python dependencies (based on the use case)
+` ./install.sh `
 
-`pip install -r requirements.txt`
+It compiles the zynseq library and installs basic python dependencies.
+Change the configuration according to your needs (app/config.py).
 
-## Using the file converter / bridge
+### Usage
 
 If no arguments are given, it will constantly monitor the changes in the standard project folder (preconfigured in config.py):
 
@@ -30,12 +31,14 @@ Example to manually convert and upload a project
 
 ## Interactive CLI / standalone editor (very experimental, only partially implemented)
 
-### Software dependencies (mainly LinuxSampler)
+### Software dependencies
 
-There are install scripts (in /bin folder) for the following platforms:
+Install basic dependencies with
 
-arm7l for Raspberry Pi with Raspberry Pi OS Lite Buster
-x86_64 for x86/64 with Ubuntu 22.04 LTS
+` ./bin/audio.sh `
+
+Install LinuxSampler
+(there are further install scripts (in /bin folder) for different platforms)
 
 ### Starting the CLI / Kivy GUI
 
