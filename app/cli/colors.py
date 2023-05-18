@@ -1,8 +1,9 @@
 import curses
 
-
 class Col:
     RESET = '\033[0m'
+    BOLD = '\033[1m'
+    FAINT = '\033[2m'
     BLACK = '\033[0;30m'
     RED = '\033[0;31m'
     GREEN = '\033[0;32m'
@@ -10,7 +11,7 @@ class Col:
     BLUE = '\033[0;34m'
     MAGENTA = '\033[0;35m'
     CYAN = '\033[0;36m'
-    White = '\033[0;37m'
+    WHITE = '\033[0;37m'
 
 
 class BCol:

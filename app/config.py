@@ -27,3 +27,4 @@ PATH_SAMPLES_MY = '/zynthian/zynthian-my-data/soundfonts/'
 SFTP_HOST = "zynthian.local"
 SFTP_USER = "root"
 SFTP_PASSWORD = "raspberry"
+SFTP_DEFAULT_SNAPSHOT = '001'

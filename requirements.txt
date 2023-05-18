@@ -1,6 +1,8 @@
+# dependencies for the renoise bridge:
+pysftp==0.2.9
+watchdog==3.0.0
+
+# dependencies for the rest of the app:
 JACK-Client==0.5.4
 Kivy==2.1.0
 oscpy==0.6.0
-
-# for converter utility:
-pysftp

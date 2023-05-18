@@ -1,7 +1,13 @@
 import __main__
 import logging
+from app.cli.colors import Col
 
 ln = ''
+try:
+    unicode
+    _unicode = True
+except NameError:
+    _unicode = False
 
 
 class LoggerFactory:
@@ -35,11 +41,26 @@ def format(message):
     return f'{ln}{message}'
 
 
-try:
-    unicode
-    _unicode = True
-except NameError:
-    _unicode = False
+class SimpleColorFormatter(logging.Formatter):
+    grey = "\\x1b[38;21m"
+    yellow = "\\x1b[33;21m"
+    red = '\033[0;31m'
+    bold_red = "\\x1b[31;1m"
+    reset = Col.RESET
+    format = "%(message)s"
+
+    FORMATS = {
+        logging.DEBUG: Col.FAINT + format + reset,
+        logging.INFO: Col.FAINT + format + reset,
+        logging.WARNING: Col.GREEN + format + reset,
+        logging.ERROR: Col.RED + format + reset,
+        logging.CRITICAL: bold_red + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
 
 
 class CursesHandler(logging.Handler):
@@ -53,7 +74,7 @@ class CursesHandler(logging.Handler):
             msg = self.format(record)
             screen = self.screen
             fs = "\n%s"
-            if not _unicode:  # if no unicode support...
+            if not _unicode:
                 screen.addstr(fs % msg)
                 screen.refresh()
             else:
