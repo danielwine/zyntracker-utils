@@ -32,14 +32,18 @@ class Connection(pysftp.Connection):
                          password=config.SFTP_PASSWORD)
 
     def upload(self, src_path, dest_path, snapshot_folder):
+        folder = config.PATH_ZSS_REMOTE + snapshot_folder
+        if not self.exists(folder):
+            logger.info(f"Specified snapshot folder '{snapshot_folder}' " +
+                        f"does not exist. Creating.")
+            self.mkdir(folder)
         try:
             self.put(src_path, dest_path, preserve_mtime=True)
         except FileNotFoundError:
-            print(f'Bad target "{dest_path}"')
-            exit()
-        print(
-            f'{Col.GREEN}ZSS uploaded to snapshot folder ' +
-            f'{snapshot_folder}.{Col.RESET}')
+            logger.error(f'Bad target "{dest_path}"')
+            return False
+        logger.warning(
+            f'ZSS uploaded to snapshot folder {snapshot_folder}.')
 
     def get_remote_file(self, src_path, dest_path):
         if self.exists(src_path):
@@ -81,7 +85,7 @@ class FileChangeHandler(FileSystemEventHandler):
             if event.src_path.endswith('.xrns.tmp'):
                 name = splitext(basename(event.src_path))[0]
                 current_time = datetime.now().strftime("%H:%M:%S")
-                print(f'Project {name} modified at {current_time}')
+                logger.info(f'Project {name} was modified at {current_time}')
                 time.sleep(1.5)
                 self.callback(name, config.SFTP_DEFAULT_SNAPSHOT)
 
@@ -118,15 +122,20 @@ class App:
             logger.info(' ', file)
 
     def connect(self):
-        try:
-            err = f'Your zynthian cannot be reached at {config.SFTP_HOST}'
-            self.conn = Connection()
-        except pysftp.exceptions.ConnectionException:
-            logger.error(f'Timeout. {err}')
-            exit()
-        except paramiko.ssh_exception.SSHException:
-            logger.error(f'No route to host. {err}')
-            exit()
+        success = False
+        reconnect_delay = 5
+        while not success:
+            try:
+                err = f'Your zynthian cannot be reached at {config.SFTP_HOST}'
+                self.conn = Connection()
+                success = True
+            except pysftp.exceptions.ConnectionException:
+                logger.error(f'Timeout. {err}')
+            except paramiko.ssh_exception.SSHException:
+                logger.error(f'No route to host. {err}')
+            if not success:
+                time.sleep(reconnect_delay)
+                logger.info(f'Reconnecting in {reconnect_delay} seconds.')
         print()
         logger.warning(f'Connection to zynthian established.')
         self.connected = True
@@ -158,11 +167,18 @@ class App:
         self.stdout.unmute()
 
     def update(self, local_path, remote_path, snapshot_folder=''):
-        if self.conn.get_remote_file(remote_path, local_path):
-            logger.info(f'Project found on server. Updating...')
-            self.seq.load_snapshot(local_path, load_sequence=False)
-        self.seq.save_file(file_path=local_path)
-        self.conn.upload(local_path, remote_path, snapshot_folder)
+        success = False
+        while not success:
+            if self.conn.get_remote_file(remote_path, local_path):
+                logger.info(f'Project found on server. Updating...')
+                self.seq.load_snapshot(local_path, load_sequence=False)
+            self.seq.save_file(file_path=local_path)
+            try:
+                self.conn.upload(local_path, remote_path, snapshot_folder)
+                success = True
+            except OSError:
+                logger.error('Connection lost.')
+                self.connect()
 
     def print_statistics(self):
         name = ' ' + self.xrns.source.project_name if self.p_args else ''
