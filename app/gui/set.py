@@ -1,4 +1,4 @@
-from app.config import PATH_DATA
+from app.config import PATH_ZSS, PATH_XRNS
 from app.io.os import get_files
 from kivy.lang import Builder
 from kivy.uix.gridlayout import GridLayout
@@ -36,4 +36,5 @@ class Set(GridLayout):
     def get_data(self):
         self.files = {}
         for item in ['zss', 'xrns']:
-            self.files[item] = get_files(f'{PATH_DATA}/{item}', item)
+            self.files[item] = get_files(
+                PATH_ZSS if item == 'zss' else PATH_XRNS, item)

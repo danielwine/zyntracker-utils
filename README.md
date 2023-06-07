@@ -1,11 +1,10 @@
 # ZynTracker utils
 
-ZynTracker utils are a collection of small Python modules in order to facilitate (remote) sequencing for the Zynthian open synth platform.
+ZynTracker utils are experimental Python modules in order to facilitate remote sequencing (on Linux) for the Zynthian open synth platform. It uses the 'zynseq' C++ library written by Brian Walton.
 
-It supports phrase extraction from renoise files (xrns, xrni) and zynthian snapshot (zss) imports and exports.
+It supports phrase extraction from renoise files (xrns) and zynthian snapshot (zss) imports and exports.
 
 It serves as a bridge between my Renoise projects and the Zynthian platform.
-A standalone editor with graphical user interface _might_ be based on the Kivy UI framework.
 
 ## Renoise bridge
 
@@ -15,7 +14,7 @@ Run the install script
 
 ` ./install.sh `
 
-It compiles the zynseq library and installs basic python dependencies.
+This compiles the zynseq library and installs basic python dependencies.
 Change the configuration according to your needs (app/config.py).
 
 ### Usage
@@ -29,8 +28,9 @@ Example to manually convert and upload a project
 
 `python -m app.bridge test.xrns --upload 002`
 
-## Interactive CLI / standalone editor (very experimental, only partially implemented)
+## Interactive CLI / standalone editor (not implemented)
 
+Basic draft only with no guarantee of further development.
 ### Software dependencies
 
 Install basic dependencies with

@@ -101,6 +101,8 @@ class App:
     def parse_args(self, args=None):
         parser = argparse.ArgumentParser()
         print('Renoise-Zynthian 🎵 bridge by danielwine')
+        logger.info('zynseq library (c) by Brian Walton')
+        print()
         parser.add_argument('filename', type=str, nargs='?')
         parser.add_argument('--list', action='store_true',
                             help='Lists projects in standard library')

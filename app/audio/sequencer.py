@@ -88,9 +88,9 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                 for phrase_nr, phrase in enumerate(group.phrases):
                     if sequence_nr + 1 > sequences_in_bank:
                         bank += 1
+                        sequences = sequences - sequence_nr + 1
                         sequences_in_bank = self._expand_bank(
-                            bank, sequences - sequence_nr
-                        )
+                            bank, sequences)
                         sequence_nr = 0
                     name = f'{group.name} {phrase_nr}'
                     self._import_sequence(
