@@ -2,7 +2,7 @@ import shutil
 import base64
 from os.path import splitext, exists
 from json import JSONDecoder, JSONEncoder
-from app.config import create_backup, PATH_BASE, PATH_DATA
+from app.config import create_backup, vertical_zoom, PATH_BASE, PATH_DATA
 import logging
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,7 @@ class SnapshotManager:
         if exists(file_path) and create_backup:
             shutil.copy2(file_path, splitext(file_path)[0] + '.bak')
         try:
+            self.libseq.setVerticalZoom(vertical_zoom)
             riff_data = self.get_riff_data()
             self.snapshot["zynseq_riff_b64"] = base64.encodebytes(
                 riff_data).decode("utf-8").replace('\n', '')

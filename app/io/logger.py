@@ -54,7 +54,7 @@ class SimpleColorFormatter(logging.Formatter):
         logging.INFO: Col.FAINT + format + reset,
         logging.WARNING: Col.GREEN + format + reset,
         logging.ERROR: Col.RED + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.CRITICAL: Col.RED + format + reset
     }
 
     def format(self, record):

@@ -8,6 +8,10 @@ autorun_jack = False
 # Sequencer (bridge) settings
 
 create_backup = True       # whether to make a local backup of a zss
+
+vertical_zoom  = 16        # default vertical zoom for saving snapshots
+minimum_rows = 5           # minimum number of rows / columns per bank
+maximum_rows = 5           # maximum number of rows / columns per bank
 auto_bank = 10             # destination bank of auto transposed phrases
 trigger_channel = 15       # global trigger channel for sequences
 trigger_start_note = 24    # start note for auto transposed sequences

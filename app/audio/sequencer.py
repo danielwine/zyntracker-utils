@@ -2,7 +2,8 @@ import time
 from math import sqrt
 from os.path import dirname, realpath
 from app.config import (
-    auto_bank, trigger_channel, trigger_start_note, PATH_ZSS)
+    auto_bank, minimum_rows, maximum_rows,
+    trigger_channel, trigger_start_note, PATH_ZSS)
 from app.io.os import trim_extension
 from app.io.logger import LoggerFactory
 from app.shared.tracker import Note, TrackerPattern
@@ -37,17 +38,24 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self._import_groups(bank)
         self.get_statistics()
 
-    def _expand_bank(self, bank):
-        sequences = len([phrase for group in self.tracker.get_groups()
-                         for phrase in group.phrases if
-                         not group.name.startswith('*')])
+    def _get_tracker_sequences(self):
+        return len([phrase for group in self.tracker.get_groups()
+                    for phrase in group.phrases if
+                    not group.name.startswith('*')])
+
+    def _expand_bank(self, bank, sequences):
         current_sequences = self.libseq.getSequencesInBank(bank)
+        new_sequences = current_sequences
         sqrts = sqrt(sequences)
         print(sequences)
         if int(sqrts) != sqrts and sequences > current_sequences:
-            new_sequences = (int(sqrts) + 1) * (int(sqrts) + 1)
+            rows = int(sqrts) + 1
+            rows = rows if rows <= maximum_rows else maximum_rows
+            rows = rows if rows >= minimum_rows else minimum_rows
+            new_sequences = rows * rows
             print(new_sequences)
             self.libseq.setSequencesInBank(bank, new_sequences)
+        return new_sequences
 
     def _import_sequence(
             self, bank, sequence, name, channel, phrase_obj, transpose):
@@ -64,8 +72,9 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                 bank, sequence, trigger_start_note + sequence)
 
     def _import_groups(self, bank):
+        sequences = self._get_tracker_sequences()
         sequence_nr = 0
-        self._expand_bank(bank)
+        sequences_in_bank = self._expand_bank(bank, sequences)
         for group_nr, group in enumerate(self.tracker.get_groups()):
             if group.name.startswith('*'):
                 self.libseq.setTriggerChannel(trigger_channel)
@@ -77,6 +86,12 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                         group.phrases[0], phrase_nr)
             else:
                 for phrase_nr, phrase in enumerate(group.phrases):
+                    if sequence_nr + 1 > sequences_in_bank:
+                        bank += 1
+                        sequences_in_bank = self._expand_bank(
+                            bank, sequences - sequence_nr
+                        )
+                        sequence_nr = 0
                     name = f'{group.name} {phrase_nr}'
                     self._import_sequence(
                         bank, sequence_nr, name, group_nr, phrase, 0)
