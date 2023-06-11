@@ -24,6 +24,7 @@ ch = logging.StreamHandler()
 ch.setFormatter(SimpleColorFormatter())
 logger.addHandler(ch)
 logger.setLevel(logging.INFO)
+debug = False
 
 
 class Connection(pysftp.Connection):
@@ -147,7 +148,7 @@ class App:
         self.connected = False
         logger.info('Disconnected from zynthian.')
 
-    def load(self, file, debug=False):
+    def load(self, file):
         try:
             self.xrns.load(file)
         except FileNotFoundError:
@@ -158,7 +159,7 @@ class App:
 
         if not debug:
             self.stdout.mute()
-        self.seq.initialize(self.context['path_lib'], scan=False)
+        self.seq.initialize(self.context['path_lib'], scan=False, debug=debug)
         try:
             self.seq.import_project(file, self.xrns.project)
         except Exception as e:
@@ -196,8 +197,8 @@ class App:
         self.list_files()
         exit()
 
-    def process(self, filename, upload_path, debug=False):
-        self.load(filename, debug=debug)
+    def process(self, filename, upload_path):
+        self.load(filename)
         self.print_statistics()
 
         local_path = self.xrns.get_original_path() + '.zss'
@@ -212,8 +213,12 @@ class App:
                         snapshot_folder=upload_path)
 
     def run(self):
+        global debug
         self.p_args = self.parse_args()
-        if not self.p_args:
+        if self.p_args and self.p_args.debug:
+            logger.setLevel(logging.DEBUG)
+            debug = True
+        if not self.p_args or (not self.p_args.filename and self.p_args.debug):
             print(f'{Col.CYAN}Type -h to see argument options.')
             print(f'No arguments specified. Entering watch mode.')
             self.connect()
@@ -221,9 +226,7 @@ class App:
             watch = WatchDog()
             watch.run(self.process)
         else:
-            self.process(
-                self.p_args.filename, self.p_args.upload_path,
-                debug=self.p_args.debug)
+            self.process(self.p_args.filename, self.p_args.upload_path)
         self.disconnect()
 
 

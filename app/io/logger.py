@@ -15,13 +15,13 @@ class LoggerFactory:
         global ln
         cls.name = name
         package = __main__.__file__.split('/')[-2]
-        if package == 'cli':
-            ln = cls.getName(cls)
-            return cls.getDefaultLogger(cls, name)
         if package == 'gui':
             ln = cls.getName(cls, default=False)
             return cls.getKivyLogger(cls)
-
+        else:
+            ln = cls.getName(cls)
+            return cls.getDefaultLogger(cls, name)
+        
     def getName(cls, default=True):
         return cls.name.split('.')[-1].capitalize() + ': ' if (
             not default) else ''

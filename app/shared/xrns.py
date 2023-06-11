@@ -130,7 +130,8 @@ class XRNS:
                 if noteItem is not None:
                     note.midi = Note.get_midi(noteItem.text)
                     vel = notecolumn.find('Volume')
-                    note.velocity = int(vel.text, 16) if vel is not None else 80
+                    note.velocity = int(
+                        vel.text, 16) if vel is not None else 80
                     cnotes.append(note)
 
         try:

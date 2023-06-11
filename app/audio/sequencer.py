@@ -1,6 +1,7 @@
 import time
 from math import sqrt
 from os.path import dirname, realpath
+from logging import DEBUG, INFO
 from app.config import (
     auto_bank, minimum_rows, maximum_rows,
     trigger_channel, trigger_start_note, PATH_ZSS)
@@ -20,8 +21,9 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         self.filepath = ""
         self.file = ""
 
-    def initialize(self, path, scan=True):
+    def initialize(self, path, scan=True, debug=False):
         super().initialize(path)
+        logger.setLevel(DEBUG if debug else INFO)
         self.pattern = PatternManager(self.libseq)
         if scan:
             self.get_statistics()
@@ -47,14 +49,13 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
         current_sequences = self.libseq.getSequencesInBank(bank)
         new_sequences = current_sequences
         sqrts = sqrt(sequences)
-        print(sequences)
-        if int(sqrts) != sqrts and sequences > current_sequences:
+        if sequences > current_sequences:
             rows = int(sqrts) + 1
             rows = rows if rows <= maximum_rows else maximum_rows
             rows = rows if rows >= minimum_rows else minimum_rows
             new_sequences = rows * rows
-            print(new_sequences)
             self.libseq.setSequencesInBank(bank, new_sequences)
+        print(new_sequences, sqrts, int(sqrts), sequences, current_sequences)
         return new_sequences
 
     def _import_sequence(
@@ -86,6 +87,7 @@ class Sequencer(zynseq.zynseq, SnapshotManager):
                         group.phrases[0], phrase_nr)
             else:
                 for phrase_nr, phrase in enumerate(group.phrases):
+                    print(sequence_nr, sequences_in_bank)
                     if sequence_nr + 1 > sequences_in_bank:
                         bank += 1
                         sequences = sequences - sequence_nr + 1
